@@ -21,23 +21,55 @@
     
     <!-- Netlify Identity Widget Script -->
     <script>
+      // Initialize Netlify Identity when the widget loads
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on("init", user => {
+          console.log("Netlify Identity initialized", user);
           if (!user) {
             window.netlifyIdentity.on("login", () => {
+              console.log("User logged in, redirecting to admin");
               document.location.href = "/admin/";
             });
           }
         });
         
         window.netlifyIdentity.on("signup", () => {
+          console.log("User signed up, redirecting to admin");
           document.location.href = "/admin/";
         });
         
         window.netlifyIdentity.on("logout", () => {
+          console.log("User logged out, redirecting to login");
           document.location.href = "/admin-login";
         });
       }
+      
+      // Handle login button click if it exists
+      document.addEventListener('DOMContentLoaded', function() {
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+          loginBtn.addEventListener('click', function() {
+            if (window.netlifyIdentity) {
+              window.netlifyIdentity.open('login');
+            } else {
+              console.error('Netlify Identity widget not loaded');
+              alert('Service d\'authentification non disponible. Veuillez recharger la page.');
+            }
+          });
+        }
+        
+        // Initialize Netlify Identity if not already done
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.init();
+        }
+      });
+      
+      // Fallback initialization for cases where the widget loads after DOMContentLoaded
+      window.addEventListener('load', function() {
+        if (window.netlifyIdentity && !window.netlifyIdentity.currentUser) {
+          window.netlifyIdentity.init();
+        }
+      });
     </script>
   </body>
 </html>
