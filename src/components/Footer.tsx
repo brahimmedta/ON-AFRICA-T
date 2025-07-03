@@ -6,11 +6,6 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
-  const handleAdminClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.location.href = '/admin-login';
-  };
-
   return (
     <footer className="bg-[#08295f] text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,13 +95,13 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
             © 2025 ON AFRICA TP. Tous droits réservés.
           </p>
           
-          <button
-            onClick={handleAdminClick}
-            className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105 bg-blue-800/50 px-4 py-2 rounded-lg hover:bg-blue-700/50"
+          <a
+            href="/admin-login"
+            className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105"
           >
             <Shield className="h-4 w-4" />
-            <span className="text-sm font-medium">لوحة الإدارة</span>
-          </button>
+            <span className="text-sm">Administration</span>
+          </a>
         </div>
       </div>
     </footer>

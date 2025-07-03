@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png" />
@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Netlify Identity Widget - Load early -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <!-- Netlify Identity Widget -->
+    <script type="module" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -21,33 +21,15 @@
     
     <!-- Netlify Identity Widget Script -->
     <script>
-      // Initialize Netlify Identity when the page loads
-      document.addEventListener('DOMContentLoaded', function() {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.init();
-          
-          // Handle login redirect
-          window.netlifyIdentity.on("init", user => {
-            if (!user && window.location.pathname === '/admin/') {
-              window.location.href = "/admin-login";
-            }
-          });
-          
-          // Handle successful login
-          window.netlifyIdentity.on("login", () => {
-            if (window.location.pathname === '/admin-login') {
-              window.location.href = "/admin/";
-            }
-          });
-          
-          // Handle logout
-          window.netlifyIdentity.on("logout", () => {
-            if (window.location.pathname === '/admin/' || window.location.pathname.startsWith('/admin/')) {
-              window.location.href = "/admin-login";
-            }
-          });
-        }
-      });
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on("init", user => {
+          if (!user) {
+            window.netlifyIdentity.on("login", () => {
+              document.location.href = "/admin/";
+            });
+          }
+        });
+      }
     </script>
   </body>
 </html>
