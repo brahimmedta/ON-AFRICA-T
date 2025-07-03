@@ -1,0 +1,81 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "public/images"
+public_folder: "/images"
+
+collections:
+  - name: "settings"
+    label: "Paramètres du site"
+    files:
+      - name: "general"
+        label: "Informations générales"
+        file: "src/data/settings.json"
+        fields:
+          - { label: "Nom de l'entreprise", name: "company_name", widget: "string" }
+          - { label: "Téléphone", name: "phone", widget: "string" }
+          - { label: "Fax", name: "fax", widget: "string" }
+          - { label: "WhatsApp", name: "whatsapp", widget: "string" }
+          - { label: "Email", name: "email", widget: "string" }
+          - { label: "BP", name: "bp", widget: "string" }
+          - { label: "Adresse", name: "address", widget: "string" }
+          - { label: "Logo", name: "logo", widget: "image" }
+
+  - name: "content"
+    label: "Contenu du site"
+    files:
+      - name: "hero"
+        label: "Section Accueil"
+        file: "src/data/hero.json"
+        fields:
+          - { label: "Titre principal", name: "title", widget: "string" }
+          - { label: "Sous-titre", name: "subtitle", widget: "string" }
+          - { label: "Description longue", name: "description", widget: "text" }
+          - { label: "Années d'expérience", name: "experience_years", widget: "number" }
+          - { label: "Nombre de projets", name: "projects_count", widget: "number" }
+          - { label: "Nombre de partenaires", name: "partners_count", widget: "number" }
+          - { label: "Pourcentage satisfaction", name: "satisfaction_rate", widget: "number" }
+
+      - name: "director"
+        label: "Message du directeur"
+        file: "src/data/director.json"
+        fields:
+          - { label: "Photo du directeur 1", name: "photo1", widget: "image" }
+          - { label: "Photo du directeur 2", name: "photo2", widget: "image" }
+          - { label: "Message paragraphe 1", name: "message1", widget: "text" }
+          - { label: "Message paragraphe 2", name: "message2", widget: "text" }
+          - { label: "Message paragraphe 3", name: "message3", widget: "text" }
+          - { label: "Titre du poste", name: "position", widget: "string" }
+
+  - name: "services"
+    label: "Services"
+    folder: "src/data/services"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Titre", name: "title", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Image", name: "image", widget: "image" }
+      - { label: "Icône", name: "icon", widget: "string" }
+
+  - name: "projects"
+    label: "Réalisations"
+    folder: "src/data/projects"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Titre", name: "title", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Image", name: "image", widget: "image" }
+
+  - name: "partners"
+    label: "Partenaires"
+    folder: "src/data/partners"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Nom", name: "name", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Logo", name: "logo", widget: "image" }
+      - { label: "Site web", name: "website", widget: "string", required: false }
