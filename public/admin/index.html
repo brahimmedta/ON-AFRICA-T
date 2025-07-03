@@ -167,6 +167,7 @@
         cursor: pointer;
         transition: all 0.3s ease;
         margin: 8px;
+        min-width: 160px;
       }
       
       .auth-button:hover {
@@ -183,6 +184,17 @@
       .auth-button.secondary:hover {
         background: #08295f;
         color: white;
+      }
+      
+      .auth-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+      
+      .auth-button:disabled:hover {
+        transform: none;
+        box-shadow: none;
       }
     </style>
   </head>
@@ -206,12 +218,15 @@
           Vous devez être connecté pour accéder au système de gestion de contenu. 
           Veuillez vous connecter avec vos identifiants autorisés.
         </p>
-        <button onclick="openLogin()" class="auth-button">
-          Se connecter
-        </button>
-        <button onclick="goHome()" class="auth-button secondary">
-          Retour au site
-        </button>
+        <div id="authButtons">
+          <button id="loginButton" onclick="openLogin()" class="auth-button">
+            Se connecter
+          </button>
+          <button onclick="goHome()" class="auth-button secondary">
+            Retour au site
+          </button>
+        </div>
+        <div id="authStatus" style="margin-top: 20px; font-size: 14px; color: #64748b;"></div>
       </div>
     </div>
 
@@ -221,43 +236,93 @@
     <script>
       let isAuthenticated = false;
       let cmsInitialized = false;
+      let identityInitialized = false;
       
-      // Initialize Netlify Identity
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", user => {
-          console.log("Netlify Identity initialized", user);
+      // Status update function
+      function updateAuthStatus(message) {
+        const statusEl = document.getElementById('authStatus');
+        if (statusEl) {
+          statusEl.textContent = message;
+        }
+        console.log('Auth Status:', message);
+      }
+      
+      // Disable/enable login button
+      function setLoginButtonState(disabled, text) {
+        const loginBtn = document.getElementById('loginButton');
+        if (loginBtn) {
+          loginBtn.disabled = disabled;
+          if (text) loginBtn.textContent = text;
+        }
+      }
+      
+      // Initialize Netlify Identity with better error handling
+      function initializeNetlifyIdentity() {
+        if (!window.netlifyIdentity) {
+          updateAuthStatus('Service d\'authentification non disponible');
+          return false;
+        }
+        
+        if (identityInitialized) {
+          return true;
+        }
+        
+        try {
+          updateAuthStatus('Initialisation du service d\'authentification...');
           
-          if (user) {
+          window.netlifyIdentity.on("init", user => {
+            console.log("Netlify Identity initialized", user);
+            identityInitialized = true;
+            
+            if (user) {
+              isAuthenticated = true;
+              updateAuthStatus('Utilisateur connecté, chargement du CMS...');
+              initializeCMS();
+            } else {
+              updateAuthStatus('Veuillez vous connecter pour continuer');
+              showAuthRequired();
+            }
+          });
+          
+          window.netlifyIdentity.on("login", user => {
+            console.log("User logged in", user);
             isAuthenticated = true;
+            updateAuthStatus('Connexion réussie! Chargement du CMS...');
+            hideAuthRequired();
             initializeCMS();
-          } else {
+          });
+          
+          window.netlifyIdentity.on("logout", () => {
+            console.log("User logged out");
+            isAuthenticated = false;
+            updateAuthStatus('Déconnexion effectuée');
+            window.location.href = "/admin-login";
+          });
+          
+          window.netlifyIdentity.on("error", err => {
+            console.error("Netlify Identity error:", err);
+            updateAuthStatus('Erreur d\'authentification: ' + (err.message || 'Erreur inconnue'));
             showAuthRequired();
-          }
-        });
-        
-        window.netlifyIdentity.on("login", user => {
-          console.log("User logged in", user);
-          isAuthenticated = true;
-          hideAuthRequired();
-          initializeCMS();
-        });
-        
-        window.netlifyIdentity.on("logout", () => {
-          console.log("User logged out");
-          isAuthenticated = false;
-          window.location.href = "/admin-login";
-        });
-        
-        window.netlifyIdentity.on("error", err => {
-          console.error("Netlify Identity error:", err);
-          showAuthRequired();
-        });
+            setLoginButtonState(false, 'Réessayer');
+          });
+          
+          // Initialize the widget
+          window.netlifyIdentity.init();
+          return true;
+          
+        } catch (error) {
+          console.error("Error initializing Netlify Identity:", error);
+          updateAuthStatus('Erreur lors de l\'initialisation');
+          return false;
+        }
       }
       
       function initializeCMS() {
         if (cmsInitialized) return;
         
         try {
+          updateAuthStatus('Initialisation du CMS...');
+          
           // Configure CMS
           window.CMS.init({
             config: {
@@ -300,11 +365,13 @@
           
           cmsInitialized = true;
           hideLoadingScreen();
+          updateAuthStatus('CMS chargé avec succès!');
           
           console.log("CMS initialized successfully");
           
         } catch (error) {
           console.error("Error initializing CMS:", error);
+          updateAuthStatus('Erreur lors du chargement du CMS');
           showAuthRequired();
         }
       }
@@ -325,6 +392,7 @@
       function showAuthRequired() {
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('authRequired').style.display = 'flex';
+        setLoginButtonState(false, 'Se connecter');
       }
       
       function hideAuthRequired() {
@@ -333,10 +401,22 @@
       }
       
       function openLogin() {
-        if (window.netlifyIdentity) {
+        if (!window.netlifyIdentity) {
+          updateAuthStatus('Service d\'authentification non disponible');
+          setTimeout(() => {
+            window.location.href = '/admin-login';
+          }, 2000);
+          return;
+        }
+        
+        try {
+          updateAuthStatus('Ouverture de la fenêtre de connexion...');
+          setLoginButtonState(true, 'Connexion en cours...');
           window.netlifyIdentity.open('login');
-        } else {
-          window.location.href = '/admin-login';
+        } catch (error) {
+          console.error('Error opening login:', error);
+          updateAuthStatus('Erreur lors de l\'ouverture de la connexion');
+          setLoginButtonState(false, 'Réessayer');
         }
       }
       
@@ -347,24 +427,26 @@
       // Initialize on page load
       document.addEventListener('DOMContentLoaded', function() {
         console.log('Admin panel loaded');
+        updateAuthStatus('Chargement de la page d\'administration...');
         
-        // Check authentication status
-        if (window.netlifyIdentity) {
-          const user = window.netlifyIdentity.currentUser();
-          if (user) {
-            isAuthenticated = true;
-            initializeCMS();
-          } else {
-            showAuthRequired();
-          }
-        } else {
-          // Fallback if Netlify Identity is not available
-          setTimeout(() => {
-            if (!window.netlifyIdentity) {
+        // Wait a bit for Netlify Identity to load
+        setTimeout(() => {
+          if (initializeNetlifyIdentity()) {
+            // Check authentication status
+            const user = window.netlifyIdentity?.currentUser();
+            if (user) {
+              isAuthenticated = true;
+              updateAuthStatus('Utilisateur déjà connecté, chargement du CMS...');
+              initializeCMS();
+            } else {
+              updateAuthStatus('Authentification requise');
               showAuthRequired();
             }
-          }, 3000);
-        }
+          } else {
+            updateAuthStatus('Impossible de charger le service d\'authentification');
+            showAuthRequired();
+          }
+        }, 1000);
       });
       
       // Handle page visibility changes
@@ -375,6 +457,12 @@
             window.location.href = '/admin-login';
           }
         }
+      });
+      
+      // Global error handler
+      window.addEventListener('error', function(event) {
+        console.error('Global error:', event.error);
+        updateAuthStatus('Erreur système détectée');
       });
     </script>
   </body>
