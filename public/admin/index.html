@@ -4,46 +4,125 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Manager - ON AFRICA TP</title>
+    <!-- Load Netlify Identity first -->
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
+    <!-- Loading indicator -->
+    <div id="loading" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #08295f, #37bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+      font-family: 'Poppins', sans-serif;
+    ">
+      <div style="text-align: center;">
+        <div style="
+          width: 50px;
+          height: 50px;
+          border: 4px solid rgba(255,255,255,0.3);
+          border-top: 4px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        "></div>
+        <p>جاري تحميل لوحة الإدارة...</p>
+      </div>
+    </div>
+
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+
     <!-- Include the script that builds the page and powers Netlify CMS -->
     <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
+    
     <script>
-      // Initialize Netlify Identity
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", user => {
-          if (!user) {
-            // Redirect to custom login page if not authenticated
-            window.location.href = "/admin-login";
-          }
-        });
-        
-        window.netlifyIdentity.on("login", () => {
-          // Reload the page after login to initialize CMS
-          window.location.reload();
-        });
-        
-        window.netlifyIdentity.on("logout", () => {
-          // Redirect to login page after logout
-          window.location.href = "/admin-login";
-        });
-      }
-      
-      // Wait for DOM to be ready
+      // Initialize everything when DOM is ready
       document.addEventListener('DOMContentLoaded', function() {
-        // Check if user is authenticated before initializing CMS
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          // Initialize CMS with explicit config path
-          window.CMS.init({
-            config: {
-              load_config_file: true,
-              config_file_path: '/admin/config.yml'
+        console.log('DOM loaded, initializing admin panel...');
+        
+        // Function to hide loading screen
+        function hideLoading() {
+          const loading = document.getElementById('loading');
+          if (loading) {
+            loading.style.display = 'none';
+          }
+        }
+
+        // Function to show error and redirect
+        function showErrorAndRedirect(message) {
+          hideLoading();
+          alert('خطأ: ' + message + '\nسيتم توجيهك إلى صفحة تسجيل الدخول');
+          window.location.href = '/admin-login';
+        }
+
+        // Check if Netlify Identity is available
+        if (!window.netlifyIdentity) {
+          showErrorAndRedirect('نظام المصادقة غير متاح');
+          return;
+        }
+
+        try {
+          // Initialize Netlify Identity
+          window.netlifyIdentity.init();
+          
+          // Check authentication status
+          const currentUser = window.netlifyIdentity.currentUser();
+          
+          if (!currentUser) {
+            console.log('No authenticated user found, redirecting to login...');
+            showErrorAndRedirect('يجب تسجيل الدخول أولاً');
+            return;
+          }
+
+          console.log('User authenticated:', currentUser.email);
+
+          // User is authenticated, initialize CMS
+          if (window.CMS) {
+            try {
+              console.log('Initializing Netlify CMS...');
+              
+              // Hide loading screen after a short delay
+              setTimeout(hideLoading, 2000);
+              
+              // Initialize CMS
+              window.CMS.init({
+                config: {
+                  load_config_file: true,
+                  config_file_path: '/admin/config.yml'
+                }
+              });
+              
+              console.log('Netlify CMS initialized successfully');
+              
+            } catch (cmsError) {
+              console.error('Error initializing CMS:', cmsError);
+              showErrorAndRedirect('خطأ في تحميل نظام إدارة المحتوى');
             }
+          } else {
+            showErrorAndRedirect('نظام إدارة المحتوى غير متاح');
+          }
+
+          // Handle logout
+          window.netlifyIdentity.on('logout', () => {
+            console.log('User logged out, redirecting...');
+            window.location.href = '/admin-login';
           });
-        } else {
-          // If not authenticated, redirect to login
-          window.location.href = "/admin-login";
+
+        } catch (error) {
+          console.error('Error in admin initialization:', error);
+          showErrorAndRedirect('خطأ في تهيئة النظام');
         }
       });
     </script>

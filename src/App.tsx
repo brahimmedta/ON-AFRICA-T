@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import Presentation from './components/Presentation';
@@ -12,9 +12,20 @@ import AdminLogin from './components/AdminLogin';
 
 function App() {
   const [activeSection, setActiveSection] = useState('accueil');
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    // Listen for URL changes
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Check if we're on the admin login page
-  if (window.location.pathname === '/admin-login') {
+  if (currentPath === '/admin-login' || window.location.pathname === '/admin-login') {
     return <AdminLogin />;
   }
 

@@ -1,3 +1,10 @@
-/*    /index.html   200
+# Netlify redirects file
+
+# Admin routes - protect admin area
 /admin/*    /admin/index.html   200
+
+# Admin login route
 /admin-login    /index.html   200
+
+# SPA fallback - must be last
+/*    /index.html   200
