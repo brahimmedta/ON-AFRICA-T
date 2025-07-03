@@ -196,9 +196,34 @@
         transform: none;
         box-shadow: none;
       }
+      
+      /* Debug panel */
+      .debug-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        max-width: 300px;
+        z-index: 10000;
+        display: none;
+      }
+      
+      .debug-panel.show {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="debug-panel">
+      <div id="debugContent"></div>
+    </div>
+
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
       <div class="loading-logo">
@@ -219,10 +244,10 @@
           Veuillez vous connecter avec vos identifiants autorisés.
         </p>
         <div id="authButtons">
-          <button id="loginButton" onclick="openLogin()" class="auth-button">
+          <button id="loginButton" class="auth-button">
             Se connecter
           </button>
-          <button onclick="goHome()" class="auth-button secondary">
+          <button id="homeButton" class="auth-button secondary">
             Retour au site
           </button>
         </div>
@@ -234,9 +259,35 @@
     <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
     
     <script>
+      // Debug logging
+      const DEBUG = true;
+      let debugLogs = [];
+      
+      function debugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logMessage = `[${timestamp}] ${message}`;
+        debugLogs.push(logMessage);
+        console.log(logMessage);
+        
+        if (DEBUG) {
+          updateDebugPanel();
+        }
+      }
+      
+      function updateDebugPanel() {
+        const panel = document.getElementById('debugPanel');
+        const content = document.getElementById('debugContent');
+        if (panel && content) {
+          panel.classList.add('show');
+          content.innerHTML = debugLogs.slice(-10).join('<br>');
+        }
+      }
+      
+      // State variables
       let isAuthenticated = false;
       let cmsInitialized = false;
       let identityInitialized = false;
+      let loginAttempts = 0;
       
       // Status update function
       function updateAuthStatus(message) {
@@ -244,7 +295,7 @@
         if (statusEl) {
           statusEl.textContent = message;
         }
-        console.log('Auth Status:', message);
+        debugLog(`Status: ${message}`);
       }
       
       // Disable/enable login button
@@ -253,25 +304,49 @@
         if (loginBtn) {
           loginBtn.disabled = disabled;
           if (text) loginBtn.textContent = text;
+          debugLog(`Button state: ${disabled ? 'disabled' : 'enabled'}, text: ${text}`);
         }
       }
       
-      // Initialize Netlify Identity with better error handling
-      function initializeNetlifyIdentity() {
+      // Check if Netlify Identity is available
+      function checkNetlifyIdentity() {
+        debugLog('Checking Netlify Identity availability...');
+        
+        if (typeof window.netlifyIdentity === 'undefined') {
+          debugLog('ERROR: window.netlifyIdentity is undefined');
+          return false;
+        }
+        
         if (!window.netlifyIdentity) {
+          debugLog('ERROR: window.netlifyIdentity is null/false');
+          return false;
+        }
+        
+        debugLog('SUCCESS: Netlify Identity is available');
+        debugLog(`Identity methods: ${Object.keys(window.netlifyIdentity).join(', ')}`);
+        return true;
+      }
+      
+      // Initialize Netlify Identity with comprehensive error handling
+      function initializeNetlifyIdentity() {
+        debugLog('Starting Netlify Identity initialization...');
+        
+        if (!checkNetlifyIdentity()) {
           updateAuthStatus('Service d\'authentification non disponible');
           return false;
         }
         
         if (identityInitialized) {
+          debugLog('Identity already initialized');
           return true;
         }
         
         try {
           updateAuthStatus('Initialisation du service d\'authentification...');
           
+          // Set up event listeners
           window.netlifyIdentity.on("init", user => {
-            console.log("Netlify Identity initialized", user);
+            debugLog(`Identity initialized with user: ${user ? user.email : 'no user'}`);
             identityInitialized = true;
             
             if (user) {
@@ -285,7 +360,7 @@
           });
           
           window.netlifyIdentity.on("login", user => {
-            console.log("User logged in", user);
+            debugLog(`User logged in: ${user.email}`);
             isAuthenticated = true;
             updateAuthStatus('Connexion réussie! Chargement du CMS...');
             hideAuthRequired();
@@ -293,35 +368,54 @@
           });
           
           window.netlifyIdentity.on("logout", () => {
-            console.log("User logged out");
+            debugLog("User logged out");
             isAuthenticated = false;
             updateAuthStatus('Déconnexion effectuée');
             window.location.href = "/admin-login";
           });
           
           window.netlifyIdentity.on("error", err => {
-            console.error("Netlify Identity error:", err);
+            debugLog(`Identity error: ${err.message || err}`);
             updateAuthStatus('Erreur d\'authentification: ' + (err.message || 'Erreur inconnue'));
             showAuthRequired();
             setLoginButtonState(false, 'Réessayer');
           });
           
+          window.netlifyIdentity.on("open", () => {
+            debugLog("Identity modal opened");
+          });
+          
+          window.netlifyIdentity.on("close", () => {
+            debugLog("Identity modal closed");
+            setLoginButtonState(false, 'Se connecter');
+          });
+          
           // Initialize the widget
+          debugLog('Calling netlifyIdentity.init()...');
           window.netlifyIdentity.init();
           return true;
           
         } catch (error) {
-          console.error("Error initializing Netlify Identity:", error);
+          debugLog(`ERROR initializing Identity: ${error.message}`);
           updateAuthStatus('Erreur lors de l\'initialisation');
           return false;
         }
       }
       
       function initializeCMS() {
-        if (cmsInitialized) return;
+        if (cmsInitialized) {
+          debugLog('CMS already initialized');
+          return;
+        }
         
         try {
           updateAuthStatus('Initialisation du CMS...');
+          debugLog('Starting CMS initialization...');
+          
+          // Check if CMS is available
+          if (typeof window.CMS === 'undefined') {
+            throw new Error('Netlify CMS not loaded');
+          }
           
           // Configure CMS
           window.CMS.init({
@@ -366,22 +460,23 @@
           cmsInitialized = true;
           hideLoadingScreen();
           updateAuthStatus('CMS chargé avec succès!');
-          
-          console.log("CMS initialized successfully");
+          debugLog("CMS initialized successfully");
           
         } catch (error) {
-          console.error("Error initializing CMS:", error);
+          debugLog(`ERROR initializing CMS: ${error.message}`);
           updateAuthStatus('Erreur lors du chargement du CMS');
           showAuthRequired();
         }
       }
       
       function showLoadingScreen() {
+        debugLog('Showing loading screen');
         document.getElementById('loadingScreen').style.display = 'flex';
         document.getElementById('authRequired').style.display = 'none';
       }
       
       function hideLoadingScreen() {
+        debugLog('Hiding loading screen');
         const loadingScreen = document.getElementById('loadingScreen');
         loadingScreen.classList.add('hidden');
         setTimeout(() => {
@@ -390,18 +485,24 @@
       }
       
       function showAuthRequired() {
+        debugLog('Showing auth required screen');
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('authRequired').style.display = 'flex';
         setLoginButtonState(false, 'Se connecter');
       }
       
       function hideAuthRequired() {
+        debugLog('Hiding auth required screen');
         document.getElementById('authRequired').style.display = 'none';
         showLoadingScreen();
       }
       
+      // Login function - this is the key function that handles the button click
       function openLogin() {
-        if (!window.netlifyIdentity) {
+        loginAttempts++;
+        debugLog(`Login attempt #${loginAttempts}`);
+        
+        if (!checkNetlifyIdentity()) {
           updateAuthStatus('Service d\'authentification non disponible');
           setTimeout(() => {
             window.location.href = '/admin-login';
@@ -412,41 +513,110 @@
         try {
           updateAuthStatus('Ouverture de la fenêtre de connexion...');
           setLoginButtonState(true, 'Connexion en cours...');
+          
+          debugLog('Calling netlifyIdentity.open("login")...');
           window.netlifyIdentity.open('login');
+          
+          // Set a timeout to re-enable the button if modal doesn't open
+          setTimeout(() => {
+            if (!isAuthenticated) {
+              debugLog('Login timeout - re-enabling button');
+              setLoginButtonState(false, 'Se connecter');
+            }
+          }, 10000);
+          
         } catch (error) {
-          console.error('Error opening login:', error);
+          debugLog(`ERROR opening login: ${error.message}`);
           updateAuthStatus('Erreur lors de l\'ouverture de la connexion');
           setLoginButtonState(false, 'Réessayer');
         }
       }
       
       function goHome() {
+        debugLog('Redirecting to home page');
         window.location.href = '/';
+      }
+      
+      // Set up event listeners
+      function setupEventListeners() {
+        debugLog('Setting up event listeners...');
+        
+        // Login button
+        const loginBtn = document.getElementById('loginButton');
+        if (loginBtn) {
+          loginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            debugLog('Login button clicked');
+            openLogin();
+          });
+          debugLog('Login button event listener attached');
+        } else {
+          debugLog('ERROR: Login button not found');
+        }
+        
+        // Home button
+        const homeBtn = document.getElementById('homeButton');
+        if (homeBtn) {
+          homeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            debugLog('Home button clicked');
+            goHome();
+          });
+          debugLog('Home button event listener attached');
+        } else {
+          debugLog('ERROR: Home button not found');
+        }
       }
       
       // Initialize on page load
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('Admin panel loaded');
+        debugLog('DOM Content Loaded');
         updateAuthStatus('Chargement de la page d\'administration...');
         
-        // Wait a bit for Netlify Identity to load
-        setTimeout(() => {
-          if (initializeNetlifyIdentity()) {
-            // Check authentication status
-            const user = window.netlifyIdentity?.currentUser();
-            if (user) {
-              isAuthenticated = true;
-              updateAuthStatus('Utilisateur déjà connecté, chargement du CMS...');
-              initializeCMS();
+        // Set up event listeners first
+        setupEventListeners();
+        
+        // Wait for Netlify Identity to load
+        let checkCount = 0;
+        const maxChecks = 30; // 15 seconds max
+        
+        function checkAndInit() {
+          checkCount++;
+          debugLog(`Check #${checkCount} for Netlify Identity...`);
+          
+          if (checkNetlifyIdentity()) {
+            debugLog('Netlify Identity found, initializing...');
+            
+            if (initializeNetlifyIdentity()) {
+              // Check authentication status
+              const user = window.netlifyIdentity?.currentUser();
+              if (user) {
+                debugLog(`User already authenticated: ${user.email}`);
+                isAuthenticated = true;
+                updateAuthStatus('Utilisateur déjà connecté, chargement du CMS...');
+                initializeCMS();
+              } else {
+                debugLog('No authenticated user found');
+                updateAuthStatus('Authentification requise');
+                showAuthRequired();
+              }
             } else {
-              updateAuthStatus('Authentification requise');
+              debugLog('Failed to initialize Netlify Identity');
+              updateAuthStatus('Impossible de charger le service d\'authentification');
               showAuthRequired();
             }
+          } else if (checkCount < maxChecks) {
+            debugLog(`Netlify Identity not ready, retrying in 500ms...`);
+            setTimeout(checkAndInit, 500);
           } else {
-            updateAuthStatus('Impossible de charger le service d\'authentification');
+            debugLog('Max checks reached, Netlify Identity not available');
+            updateAuthStatus('Service d\'authentification non disponible');
             showAuthRequired();
           }
-        }, 1000);
+        }
+        
+        // Start checking
+        checkAndInit();
       });
       
       // Handle page visibility changes
@@ -454,6 +624,7 @@
         if (!document.hidden && window.netlifyIdentity) {
           const user = window.netlifyIdentity.currentUser();
           if (!user && isAuthenticated) {
+            debugLog('User session lost, redirecting to login');
             window.location.href = '/admin-login';
           }
         }
@@ -461,9 +632,23 @@
       
       // Global error handler
       window.addEventListener('error', function(event) {
-        console.error('Global error:', event.error);
+        debugLog(`Global error: ${event.error?.message || event.message}`);
         updateAuthStatus('Erreur système détectée');
       });
+      
+      // Expose functions globally for debugging
+      window.adminDebug = {
+        openLogin,
+        checkNetlifyIdentity,
+        initializeNetlifyIdentity,
+        debugLogs,
+        state: () => ({
+          isAuthenticated,
+          cmsInitialized,
+          identityInitialized,
+          loginAttempts
+        })
+      };
     </script>
   </body>
 </html>
