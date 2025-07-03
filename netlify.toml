@@ -7,8 +7,8 @@
   NPM_FLAGS = "--production=false"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/admin"
+  to = "/admin/index.html"
   status = 200
 
 [[redirects]]
@@ -18,5 +18,10 @@
 
 [[redirects]]
   from = "/admin-login"
+  to = "/admin/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
   to = "/index.html"
   status = 200
