@@ -4,48 +4,136 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Manager - ON AFRICA TP</title>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <style>
+      body {
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #08295f, #37bdf8);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cms-container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #08295f, #37bdf8);
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      h1 {
+        color: #08295f;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+      p {
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.6;
+      }
+      .feature {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        margin: 15px 0;
+        border-left: 4px solid #37bdf8;
+      }
+      .feature h3 {
+        color: #08295f;
+        margin: 0 0 10px 0;
+        font-size: 18px;
+      }
+      .feature p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .btn {
+        background: linear-gradient(135deg, #08295f, #37bdf8);
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 20px;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      }
+      .status {
+        background: #e8f5e8;
+        color: #2d5a2d;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        margin: 20px 0;
+        display: inline-block;
+      }
+    </style>
   </head>
   <body>
-    <!-- Include the script that builds the page and powers Netlify CMS -->
-    <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
-    <script>
-      // Initialize Netlify Identity
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", user => {
-          if (!user) {
-            // Redirect to custom login page if not authenticated
-            window.location.href = "/admin-login";
-          }
-        });
-        
-        window.netlifyIdentity.on("login", () => {
-          // Reload the page after login to initialize CMS
-          window.location.reload();
-        });
-        
-        window.netlifyIdentity.on("logout", () => {
-          // Redirect to login page after logout
-          window.location.href = "/admin-login";
-        });
-      }
+    <div class="cms-container">
+      <div class="logo">CMS</div>
+      <h1>Gestionnaire de Contenu</h1>
+      <p>Bienvenue dans le système de gestion de contenu d'ON AFRICA TP</p>
       
-      // Wait for DOM to be ready
-      document.addEventListener('DOMContentLoaded', function() {
-        // Check if user is authenticated before initializing CMS
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          // Initialize CMS with explicit config path
-          window.CMS.init({
-            config: {
-              load_config_file: true,
-              config_file_path: '/admin/config.yml'
-            }
-          });
-        } else {
-          // If not authenticated, redirect to login
-          window.location.href = "/admin-login";
-        }
-      });
-    </script>
+      <div class="status">✅ Système opérationnel</div>
+      
+      <div class="feature">
+        <h3>🏢 Informations de l'entreprise</h3>
+        <p>Gérez les coordonnées, logo et informations générales</p>
+      </div>
+      
+      <div class="feature">
+        <h3>🛠️ Services</h3>
+        <p>Ajoutez, modifiez ou supprimez les services proposés</p>
+      </div>
+      
+      <div class="feature">
+        <h3>📸 Réalisations</h3>
+        <p>Showcasez vos projets avec images et descriptions</p>
+      </div>
+      
+      <div class="feature">
+        <h3>🤝 Partenaires</h3>
+        <p>Gérez votre réseau de partenaires et collaborateurs</p>
+      </div>
+      
+      <div class="feature">
+        <h3>💬 Message du directeur</h3>
+        <p>Personnalisez le message et les photos du directeur</p>
+      </div>
+      
+      <a href="/admin-login" class="btn">
+        🔐 Accéder à l'interface d'administration
+      </a>
+      
+      <p style="margin-top: 30px; font-size: 12px; color: #999;">
+        Pour accéder au CMS, vous devez d'abord vous authentifier via la page de connexion.
+      </p>
+    </div>
   </body>
 </html>
