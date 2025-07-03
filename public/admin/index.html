@@ -229,14 +229,90 @@
         font-size: 10px;
       }
       
-      /* Netlify Identity Widget custom styling */
+      /* Force Netlify Identity Widget visibility and z-index */
       .netlify-identity-widget {
-        z-index: 10001 !important;
+        z-index: 999999 !important;
+        position: fixed !important;
       }
       
-      /* Force widget visibility */
       iframe[src*="netlify-identity-widget"] {
-        z-index: 10001 !important;
+        z-index: 999999 !important;
+        position: fixed !important;
+      }
+      
+      /* Ensure modal backdrop is visible */
+      .netlify-identity-widget .netlify-identity-widget-modal {
+        z-index: 999999 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      
+      /* Custom login form for fallback */
+      .custom-login-form {
+        background: white;
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 400px;
+        margin: 20px;
+      }
+      
+      .form-group {
+        margin-bottom: 20px;
+      }
+      
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #08295f;
+      }
+      
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+      
+      .form-input:focus {
+        outline: none;
+        border-color: #37bdf8;
+        box-shadow: 0 0 0 3px rgba(55, 189, 248, 0.1);
+      }
+      
+      .form-button {
+        width: 100%;
+        background: linear-gradient(135deg, #08295f, #37bdf8);
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .form-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(8, 41, 95, 0.3);
+      }
+      
+      .form-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
       }
     </style>
   </head>
@@ -270,11 +346,38 @@
           <button id="loginButton" class="auth-button">
             Se connecter
           </button>
+          <button id="customLoginButton" class="auth-button secondary" style="display: none;">
+            Connexion alternative
+          </button>
           <button id="homeButton" class="auth-button secondary">
             Retour au site
           </button>
         </div>
         <div id="authStatus" style="margin-top: 20px; font-size: 14px; color: #64748b;"></div>
+      </div>
+    </div>
+
+    <!-- Custom Login Form (Fallback) -->
+    <div id="customLoginForm" class="auth-required" style="display: none;">
+      <div class="custom-login-form">
+        <h2 style="text-align: center; margin-bottom: 24px; color: #08295f;">Connexion Alternative</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Mot de passe</label>
+            <input type="password" id="password" class="form-input" required>
+          </div>
+          <button type="submit" class="form-button" id="submitLogin">
+            Se connecter
+          </button>
+          <button type="button" class="auth-button secondary" onclick="showMainAuth()" style="width: 100%; margin-top: 12px;">
+            Retour
+          </button>
+        </form>
+        <div id="loginError" style="margin-top: 16px; color: #dc2626; text-align: center; display: none;"></div>
       </div>
     </div>
 
@@ -303,7 +406,6 @@
         if (panel && content) {
           panel.classList.add('show');
           content.innerHTML = debugLogs.slice(-15).join('<br>');
-          // Auto-scroll to bottom
           content.scrollTop = content.scrollHeight;
         }
       }
@@ -314,6 +416,7 @@
       let identityInitialized = false;
       let loginAttempts = 0;
       let identityWidget = null;
+      let modalCheckInterval = null;
       
       // Status update function
       function updateAuthStatus(message) {
@@ -348,7 +451,6 @@
           return false;
         }
         
-        // Check if essential methods exist
         const requiredMethods = ['init', 'open', 'close', 'on', 'off', 'currentUser'];
         const availableMethods = Object.keys(window.netlifyIdentity);
         const missingMethods = requiredMethods.filter(method => !availableMethods.includes(method));
@@ -363,15 +465,53 @@
         return true;
       }
       
-      // Force widget initialization
+      // Check if modal is actually visible
+      function checkModalVisibility() {
+        debugLog('👀 Checking modal visibility...');
+        
+        // Check for various modal selectors
+        const modalSelectors = [
+          '.netlify-identity-widget',
+          '.netlify-identity-widget-modal',
+          'iframe[src*="netlify-identity-widget"]',
+          '[data-netlify-identity-widget]'
+        ];
+        
+        let modalFound = false;
+        modalSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          if (elements.length > 0) {
+            debugLog(`✅ Found modal elements with selector: ${selector} (${elements.length} elements)`);
+            elements.forEach((el, index) => {
+              const styles = window.getComputedStyle(el);
+              debugLog(`   Element ${index}: display=${styles.display}, visibility=${styles.visibility}, opacity=${styles.opacity}, z-index=${styles.zIndex}`);
+            });
+            modalFound = true;
+          }
+        });
+        
+        if (!modalFound) {
+          debugLog('❌ No modal elements found in DOM');
+        }
+        
+        return modalFound;
+      }
+      
+      // Force widget initialization with DOM manipulation
       function forceInitializeWidget() {
         debugLog('🔄 Force initializing Netlify Identity widget...');
         
         try {
-          // Store reference to widget
           identityWidget = window.netlifyIdentity;
           
-          // Force initialization with explicit settings
+          // Clear any existing modal elements
+          const existingModals = document.querySelectorAll('.netlify-identity-widget, iframe[src*="netlify-identity-widget"]');
+          existingModals.forEach(modal => {
+            debugLog('🗑️ Removing existing modal element');
+            modal.remove();
+          });
+          
+          // Force re-initialization
           identityWidget.init({
             APIUrl: window.location.origin + '/.netlify/identity',
             logo: 'https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png',
@@ -387,17 +527,14 @@
         }
       }
       
-      // Enhanced login function with multiple fallback strategies
+      // Enhanced login function with modal visibility checking
       function openLogin() {
         loginAttempts++;
         debugLog(`🚀 Login attempt #${loginAttempts}`);
         
         if (!checkNetlifyIdentity()) {
           updateAuthStatus('Service d\'authentification non disponible');
-          debugLog('❌ Netlify Identity not available, redirecting to login page');
-          setTimeout(() => {
-            window.location.href = '/admin-login';
-          }, 2000);
+          showCustomLoginOption();
           return;
         }
         
@@ -405,61 +542,178 @@
           updateAuthStatus('Ouverture de la fenêtre de connexion...');
           setLoginButtonState(true, 'Connexion en cours...');
           
-          // Strategy 1: Direct open call
-          debugLog('📋 Strategy 1: Direct netlifyIdentity.open("login")');
+          // Clear any existing modal check interval
+          if (modalCheckInterval) {
+            clearInterval(modalCheckInterval);
+          }
+          
+          debugLog('🔓 Calling netlifyIdentity.open("login")...');
           window.netlifyIdentity.open('login');
           
-          // Strategy 2: Force widget refresh and retry
-          setTimeout(() => {
-            if (!isAuthenticated) {
-              debugLog('📋 Strategy 2: Force widget refresh and retry');
-              try {
-                window.netlifyIdentity.refresh();
-                window.netlifyIdentity.open('login');
-              } catch (e) {
-                debugLog(`❌ Strategy 2 failed: ${e.message}`);
-              }
-            }
-          }, 2000);
+          // Start checking for modal visibility
+          let modalCheckCount = 0;
+          const maxModalChecks = 10; // 5 seconds
           
-          // Strategy 3: Manual widget reinitialization
-          setTimeout(() => {
-            if (!isAuthenticated) {
-              debugLog('📋 Strategy 3: Manual widget reinitialization');
-              try {
-                forceInitializeWidget();
-                setTimeout(() => {
-                  window.netlifyIdentity.open('login');
-                }, 500);
-              } catch (e) {
-                debugLog(`❌ Strategy 3 failed: ${e.message}`);
-              }
+          modalCheckInterval = setInterval(() => {
+            modalCheckCount++;
+            debugLog(`👀 Modal check #${modalCheckCount}/${maxModalChecks}`);
+            
+            const modalVisible = checkModalVisibility();
+            
+            if (modalVisible) {
+              debugLog('✅ Modal is visible, stopping checks');
+              clearInterval(modalCheckInterval);
+              updateAuthStatus('Fenêtre de connexion ouverte');
+            } else if (modalCheckCount >= maxModalChecks) {
+              debugLog('❌ Modal not visible after maximum checks');
+              clearInterval(modalCheckInterval);
+              
+              // Try alternative approaches
+              tryAlternativeLoginMethods();
             }
-          }, 4000);
+          }, 500);
           
-          // Strategy 4: Fallback to admin-login page
+          // Fallback timeout
           setTimeout(() => {
-            if (!isAuthenticated) {
-              debugLog('📋 Strategy 4: Fallback to admin-login page');
-              updateAuthStatus('Redirection vers la page de connexion alternative...');
-              window.location.href = '/admin-login';
-            }
-          }, 8000);
-          
-          // Re-enable button after timeout
-          setTimeout(() => {
-            if (!isAuthenticated) {
-              debugLog('⏰ Login timeout - re-enabling button');
+            if (!isAuthenticated && modalCheckInterval) {
+              debugLog('⏰ Login timeout reached');
+              clearInterval(modalCheckInterval);
               setLoginButtonState(false, 'Se connecter');
-              updateAuthStatus('Délai d\'attente dépassé. Veuillez réessayer.');
+              updateAuthStatus('Délai d\'attente dépassé');
+              showCustomLoginOption();
             }
-          }, 10000);
+          }, 15000);
           
         } catch (error) {
           debugLog(`❌ ERROR opening login: ${error.message}`);
           updateAuthStatus('Erreur lors de l\'ouverture de la connexion');
           setLoginButtonState(false, 'Réessayer');
+          showCustomLoginOption();
         }
+      }
+      
+      // Try alternative login methods
+      function tryAlternativeLoginMethods() {
+        debugLog('🔄 Trying alternative login methods...');
+        
+        // Method 1: Force widget refresh
+        setTimeout(() => {
+          if (!isAuthenticated) {
+            debugLog('📋 Alternative Method 1: Force widget refresh');
+            try {
+              window.netlifyIdentity.refresh();
+              window.netlifyIdentity.open('login');
+              
+              setTimeout(() => {
+                if (!checkModalVisibility()) {
+                  debugLog('❌ Method 1 failed');
+                  tryMethod2();
+                }
+              }, 2000);
+            } catch (e) {
+              debugLog(`❌ Method 1 error: ${e.message}`);
+              tryMethod2();
+            }
+          }
+        }, 1000);
+      }
+      
+      function tryMethod2() {
+        debugLog('📋 Alternative Method 2: Complete reinitialization');
+        try {
+          forceInitializeWidget();
+          setTimeout(() => {
+            window.netlifyIdentity.open('login');
+            
+            setTimeout(() => {
+              if (!checkModalVisibility()) {
+                debugLog('❌ Method 2 failed');
+                tryMethod3();
+              }
+            }, 2000);
+          }, 1000);
+        } catch (e) {
+          debugLog(`❌ Method 2 error: ${e.message}`);
+          tryMethod3();
+        }
+      }
+      
+      function tryMethod3() {
+        debugLog('📋 Alternative Method 3: Manual DOM injection');
+        try {
+          // Create a manual modal trigger
+          const triggerEvent = new CustomEvent('netlify-identity:open', {
+            detail: { tab: 'login' }
+          });
+          window.dispatchEvent(triggerEvent);
+          
+          setTimeout(() => {
+            if (!checkModalVisibility()) {
+              debugLog('❌ Method 3 failed, showing custom login');
+              showCustomLoginOption();
+            }
+          }, 2000);
+        } catch (e) {
+          debugLog(`❌ Method 3 error: ${e.message}`);
+          showCustomLoginOption();
+        }
+      }
+      
+      // Show custom login option
+      function showCustomLoginOption() {
+        debugLog('🔧 Showing custom login option');
+        const customBtn = document.getElementById('customLoginButton');
+        if (customBtn) {
+          customBtn.style.display = 'inline-block';
+          updateAuthStatus('Problème avec la fenêtre de connexion. Utilisez la connexion alternative.');
+        }
+      }
+      
+      // Show custom login form
+      function showCustomLogin() {
+        debugLog('📝 Showing custom login form');
+        document.getElementById('authRequired').style.display = 'none';
+        document.getElementById('customLoginForm').style.display = 'flex';
+      }
+      
+      // Show main auth screen
+      function showMainAuth() {
+        debugLog('🔙 Showing main auth screen');
+        document.getElementById('customLoginForm').style.display = 'none';
+        document.getElementById('authRequired').style.display = 'flex';
+      }
+      
+      // Handle custom login form
+      function handleCustomLogin(email, password) {
+        debugLog(`📧 Attempting custom login for: ${email}`);
+        
+        if (!window.netlifyIdentity || !window.netlifyIdentity.gotrue) {
+          throw new Error('Netlify Identity GoTrue not available');
+        }
+        
+        const submitBtn = document.getElementById('submitLogin');
+        const errorDiv = document.getElementById('loginError');
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Connexion...';
+        errorDiv.style.display = 'none';
+        
+        // Use GoTrue API directly
+        window.netlifyIdentity.gotrue.login(email, password, true)
+          .then(user => {
+            debugLog(`✅ Custom login successful: ${user.email}`);
+            isAuthenticated = true;
+            setUser(user);
+            showMainAuth();
+            initializeCMS();
+          })
+          .catch(error => {
+            debugLog(`❌ Custom login failed: ${error.message}`);
+            errorDiv.textContent = 'Email ou mot de passe incorrect';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Se connecter';
+          });
       }
       
       // Initialize Netlify Identity with comprehensive error handling
@@ -514,11 +768,15 @@
             updateAuthStatus('Erreur d\'authentification: ' + (err.message || 'Erreur inconnue'));
             showAuthRequired();
             setLoginButtonState(false, 'Réessayer');
+            showCustomLoginOption();
           });
           
           window.netlifyIdentity.on("open", () => {
             debugLog("🔓 Identity modal opened");
             updateAuthStatus('Fenêtre de connexion ouverte');
+            if (modalCheckInterval) {
+              clearInterval(modalCheckInterval);
+            }
           });
           
           window.netlifyIdentity.on("close", () => {
@@ -529,20 +787,12 @@
             }
           });
           
-          // Initialize the widget with explicit configuration
-          debugLog('🔧 Calling netlifyIdentity.init() with configuration...');
+          // Initialize the widget
+          debugLog('🔧 Calling netlifyIdentity.init()...');
           window.netlifyIdentity.init({
             APIUrl: window.location.origin + '/.netlify/identity',
             logo: 'https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png'
           });
-          
-          // Force initialization if needed
-          setTimeout(() => {
-            if (!identityInitialized) {
-              debugLog('⚠️ Identity not initialized after timeout, forcing...');
-              forceInitializeWidget();
-            }
-          }, 3000);
           
           return true;
           
@@ -563,49 +813,15 @@
           updateAuthStatus('Initialisation du CMS...');
           debugLog('🔧 Starting CMS initialization...');
           
-          // Check if CMS is available
           if (typeof window.CMS === 'undefined') {
             throw new Error('Netlify CMS not loaded');
           }
           
-          // Configure CMS
           window.CMS.init({
             config: {
               load_config_file: true,
               config_file_path: '/admin/config.yml'
             }
-          });
-          
-          // Custom preview templates
-          window.CMS.registerPreviewTemplate('settings', ({ entry, widgetFor, widgetsFor }) => {
-            return `
-              <div style="padding: 20px; font-family: 'Poppins', sans-serif;">
-                <h1 style="color: #08295f;">${entry.getIn(['data', 'company_name'])}</h1>
-                <p><strong>Téléphone:</strong> ${entry.getIn(['data', 'phone'])}</p>
-                <p><strong>Email:</strong> ${entry.getIn(['data', 'email'])}</p>
-                <p><strong>Adresse:</strong> ${entry.getIn(['data', 'address'])}</p>
-              </div>
-            `;
-          });
-          
-          window.CMS.registerPreviewTemplate('hero', ({ entry }) => {
-            return `
-              <div style="padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #08295f, #37bdf8); color: white; border-radius: 12px;">
-                <h1 style="font-size: 48px; margin-bottom: 16px;">${entry.getIn(['data', 'title'])}</h1>
-                <h2 style="font-size: 24px; margin-bottom: 16px; opacity: 0.9;">${entry.getIn(['data', 'subtitle'])}</h2>
-                <p style="font-size: 16px; line-height: 1.6; opacity: 0.8;">${entry.getIn(['data', 'description'])}</p>
-                <div style="display: flex; gap: 20px; margin-top: 24px;">
-                  <div style="text-align: center;">
-                    <div style="font-size: 32px; font-weight: bold;">${entry.getIn(['data', 'experience_years'])}+</div>
-                    <div style="opacity: 0.8;">Années d'expérience</div>
-                  </div>
-                  <div style="text-align: center;">
-                    <div style="font-size: 32px; font-weight: bold;">${entry.getIn(['data', 'projects_count'])}+</div>
-                    <div style="opacity: 0.8;">Projets réalisés</div>
-                  </div>
-                </div>
-              </div>
-            `;
           });
           
           cmsInitialized = true;
@@ -624,6 +840,7 @@
         debugLog('📺 Showing loading screen');
         document.getElementById('loadingScreen').style.display = 'flex';
         document.getElementById('authRequired').style.display = 'none';
+        document.getElementById('customLoginForm').style.display = 'none';
       }
       
       function hideLoadingScreen() {
@@ -639,12 +856,14 @@
         debugLog('📺 Showing auth required screen');
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('authRequired').style.display = 'flex';
+        document.getElementById('customLoginForm').style.display = 'none';
         setLoginButtonState(false, 'Se connecter');
       }
       
       function hideAuthRequired() {
         debugLog('📺 Hiding auth required screen');
         document.getElementById('authRequired').style.display = 'none';
+        document.getElementById('customLoginForm').style.display = 'none';
         showLoadingScreen();
       }
       
@@ -665,9 +884,16 @@
             debugLog('🖱️ Login button clicked');
             openLogin();
           });
-          debugLog('✅ Login button event listener attached');
-        } else {
-          debugLog('❌ ERROR: Login button not found');
+        }
+        
+        // Custom login button
+        const customLoginBtn = document.getElementById('customLoginButton');
+        if (customLoginBtn) {
+          customLoginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            debugLog('🖱️ Custom login button clicked');
+            showCustomLogin();
+          });
         }
         
         // Home button
@@ -678,9 +904,17 @@
             debugLog('🖱️ Home button clicked');
             goHome();
           });
-          debugLog('✅ Home button event listener attached');
-        } else {
-          debugLog('❌ ERROR: Home button not found');
+        }
+        
+        // Custom login form
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+          loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            handleCustomLogin(email, password);
+          });
         }
       }
       
@@ -689,12 +923,10 @@
         debugLog('🚀 DOM Content Loaded - Starting initialization');
         updateAuthStatus('Chargement de la page d\'administration...');
         
-        // Set up event listeners first
         setupEventListeners();
         
-        // Wait for Netlify Identity to load with enhanced checking
         let checkCount = 0;
-        const maxChecks = 40; // 20 seconds max
+        const maxChecks = 40;
         
         function checkAndInit() {
           checkCount++;
@@ -704,7 +936,6 @@
             debugLog('✅ Netlify Identity found, initializing...');
             
             if (initializeNetlifyIdentity()) {
-              // Check authentication status
               const user = window.netlifyIdentity?.currentUser();
               if (user) {
                 debugLog(`👤 User already authenticated: ${user.email}`);
@@ -728,34 +959,22 @@
             debugLog('❌ Max checks reached, Netlify Identity not available');
             updateAuthStatus('Service d\'authentification non disponible');
             showAuthRequired();
+            showCustomLoginOption();
           }
         }
         
-        // Start checking immediately
         checkAndInit();
       });
       
-      // Handle page visibility changes
-      document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && window.netlifyIdentity) {
-          const user = window.netlifyIdentity.currentUser();
-          if (!user && isAuthenticated) {
-            debugLog('⚠️ User session lost, redirecting to login');
-            window.location.href = '/admin-login';
-          }
-        }
-      });
-      
-      // Global error handler
-      window.addEventListener('error', function(event) {
-        debugLog(`❌ Global error: ${event.error?.message || event.message}`);
-        updateAuthStatus('Erreur système détectée');
-      });
+      // Global functions
+      window.showMainAuth = showMainAuth;
+      window.showCustomLogin = showCustomLogin;
       
       // Enhanced debugging functions
       window.adminDebug = {
         openLogin,
         checkNetlifyIdentity,
+        checkModalVisibility,
         initializeNetlifyIdentity,
         forceInitializeWidget,
         debugLogs,
@@ -778,16 +997,18 @@
         testLogin: () => {
           debugLog('🧪 Manual test login triggered');
           openLogin();
-        }
+        },
+        showCustomLogin,
+        showMainAuth
       };
       
-      // Auto-show debug panel after 5 seconds if not authenticated
+      // Auto-show debug panel after 3 seconds if not authenticated
       setTimeout(() => {
         if (!isAuthenticated) {
           debugLog('🔧 Auto-showing debug panel for troubleshooting');
           window.adminDebug.toggleDebug();
         }
-      }, 5000);
+      }, 3000);
     </script>
   </body>
 </html>
