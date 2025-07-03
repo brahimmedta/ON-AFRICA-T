@@ -1,95 +1,143 @@
-import React, { useState } from 'react';
-import { User, Shield, Settings, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { User, Shield, Settings, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Home } from 'lucide-react';
+
+declare global {
+  interface Window {
+    netlifyIdentity: any;
+  }
+}
 
 const AdminLogin = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Simple authentication simulation
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  useEffect(() => {
+    // Initialize Netlify Identity
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init();
+      
+      // Check if user is already logged in
+      const currentUser = window.netlifyIdentity.currentUser();
+      setUser(currentUser);
+      setIsLoading(false);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (email && password) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
+      // Listen for login events
+      window.netlifyIdentity.on('login', (user: any) => {
+        console.log('User logged in:', user);
+        setUser(user);
+        setError('');
+        window.netlifyIdentity.close();
+        
         // Redirect to admin after successful login
+        setIsRedirecting(true);
         setTimeout(() => {
           window.location.href = '/admin/';
         }, 1500);
-      } else {
-        setError('Veuillez remplir tous les champs');
+      });
+
+      // Listen for logout events
+      window.netlifyIdentity.on('logout', () => {
+        console.log('User logged out');
+        setUser(null);
+        setError('');
+      });
+
+      // Listen for signup events
+      window.netlifyIdentity.on('signup', (user: any) => {
+        console.log('User signed up:', user);
+        setUser(user);
+        setError('');
+        window.netlifyIdentity.close();
+        
+        // Redirect to admin after successful signup
+        setIsRedirecting(true);
+        setTimeout(() => {
+          window.location.href = '/admin/';
+        }, 1500);
+      });
+
+      // Listen for error events
+      window.netlifyIdentity.on('error', (err: any) => {
+        console.error('Netlify Identity error:', err);
+        setError('Erreur de connexion. Veuillez réessayer.');
         setIsLoading(false);
-      }
-    }, 1200);
+      });
+
+    } else {
+      // If Netlify Identity is not available, show error after timeout
+      setTimeout(() => {
+        if (!window.netlifyIdentity) {
+          setError('Service d\'authentification non disponible');
+          setIsLoading(false);
+        }
+      }, 3000);
+    }
+  }, []);
+
+  const handleLogin = () => {
+    if (window.netlifyIdentity) {
+      setError('');
+      window.netlifyIdentity.open('login');
+    } else {
+      setError('Service d\'authentification non disponible');
+    }
+  };
+
+  const handleSignup = () => {
+    if (window.netlifyIdentity) {
+      setError('');
+      window.netlifyIdentity.open('signup');
+    } else {
+      setError('Service d\'authentification non disponible');
+    }
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setEmail('');
-    setPassword('');
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.logout();
+    }
+  };
+
+  const goToAdmin = () => {
+    setIsRedirecting(true);
+    window.location.href = '/admin/';
   };
 
   const goToHome = () => {
     window.location.href = '/';
   };
 
-  if (isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#08295f] via-blue-800 to-[#08295f] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
+          <p className="text-gray-600">Initialisation du système d'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isRedirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#08295f] via-blue-800 to-[#08295f] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
           {/* Success animation background */}
           <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-blue-400/10 animate-pulse"></div>
           
-          <div className="relative z-10">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <CheckCircle className="h-10 w-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-[#08295f] mb-2">
-                Connexion Réussie!
-              </h2>
-              <p className="text-gray-600">
-                Redirection vers le panneau d'administration...
-              </p>
+          <div className="relative z-10 text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <CheckCircle className="h-10 w-10 text-white" />
             </div>
-
-            <div className="space-y-6">
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-green-800 font-medium">Connecté en tant que:</p>
-                    <p className="text-green-600 text-sm">{email}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => window.location.href = '/admin/'}
-                  className="w-full bg-gradient-to-r from-[#08295f] to-[#37bdf8] text-white py-3 px-4 rounded-xl font-semibold hover:from-[#37bdf8] hover:to-[#08295f] transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
-                >
-                  <Settings className="h-5 w-5" />
-                  <span>Accéder au CMS</span>
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
-                >
-                  Se déconnecter
-                </button>
-              </div>
-            </div>
+            <h2 className="text-2xl font-bold text-[#08295f] mb-2">
+              Connexion Réussie!
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Redirection vers le panneau d'administration...
+            </p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#37bdf8] mx-auto"></div>
           </div>
         </div>
       </div>
@@ -115,102 +163,90 @@ const AdminLogin = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3">
-              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3 mb-6">
+            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
 
+        {user ? (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center space-x-3">
+                <User className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-green-800 font-medium">Connecté en tant que:</p>
+                  <p className="text-green-600 text-sm">{user.email}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={goToAdmin}
+                className="w-full bg-gradient-to-r from-[#08295f] to-[#37bdf8] text-white py-3 px-4 rounded-xl font-semibold hover:from-[#37bdf8] hover:to-[#08295f] transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <Settings className="h-5 w-5" />
+                <span>Accéder au CMS</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        ) : (
           <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#37bdf8] focus:border-transparent transition-all duration-300 hover:border-gray-400"
-                  placeholder="admin@onafricatp.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#37bdf8] focus:border-transparent transition-all duration-300 hover:border-gray-400"
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#08295f] to-[#37bdf8] text-white py-3 px-4 rounded-xl font-semibold hover:from-[#37bdf8] hover:to-[#08295f] transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>Connexion en cours...</span>
-              </>
-            ) : (
-              <>
-                <Shield className="h-5 w-5" />
-                <span>{isLogin ? 'Se connecter' : 'Créer un compte'}</span>
-              </>
-            )}
-          </button>
-
-          <div className="flex flex-col space-y-3">
             <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-[#37bdf8] hover:text-[#08295f] transition-colors duration-300 text-sm font-medium"
+              onClick={handleLogin}
+              className="w-full bg-gradient-to-r from-[#08295f] to-[#37bdf8] text-white py-3 px-4 rounded-xl font-semibold hover:from-[#37bdf8] hover:to-[#08295f] transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
             >
-              {isLogin ? 'Créer un nouveau compte' : 'Déjà un compte ? Se connecter'}
+              <Shield className="h-5 w-5" />
+              <span>Se connecter</span>
             </button>
-            
+
             <button
-              type="button"
+              onClick={handleSignup}
+              className="w-full bg-white border-2 border-[#37bdf8] text-[#37bdf8] py-3 px-4 rounded-xl font-semibold hover:bg-[#37bdf8] hover:text-white transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+            >
+              <User className="h-5 w-5" />
+              <span>Créer un compte</span>
+            </button>
+
+            <button
               onClick={goToHome}
-              className="text-gray-500 hover:text-gray-700 transition-colors duration-300 text-sm"
+              className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
             >
-              ← Retour au site principal
+              <Home className="h-5 w-5" />
+              <span>Retour au site</span>
             </button>
-          </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
-            <p className="text-xs text-blue-600 text-center leading-relaxed">
-              <strong>Note :</strong> Seuls les utilisateurs autorisés peuvent accéder au panneau d'administration. 
-              Pour des raisons de sécurité, toutes les tentatives de connexion sont enregistrées.
-            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+              <p className="text-xs text-blue-600 text-center leading-relaxed">
+                <strong>🔐 Sécurité :</strong> Seuls les utilisateurs autorisés peuvent accéder au panneau d'administration. 
+                Toutes les tentatives de connexion sont enregistrées et surveillées.
+              </p>
+            </div>
           </div>
-        </form>
+        )}
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="text-center">
+            <p className="text-xs text-gray-500 mb-2">
+              Système de gestion de contenu sécurisé
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+              <span>Powered by</span>
+              <span className="font-semibold text-[#37bdf8]">Netlify Identity</span>
+              <span>&</span>
+              <span className="font-semibold text-[#37bdf8]">Netlify CMS</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
