@@ -14,16 +14,22 @@ export default defineConfig({
         }
       }
     },
-    // Ensure admin files are copied to dist
-    copyPublicDir: true
+    // Ensure all public files are copied to dist
+    copyPublicDir: true,
+    // Ensure JSON files are treated as assets
+    assetsInlineLimit: 0
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'lucide-react']
   },
   server: {
     port: 5173,
-    host: true
+    host: true,
+    // Ensure JSON files are served with correct MIME type in development
+    middlewareMode: false
   },
   // Ensure public directory is properly handled
-  publicDir: 'public'
+  publicDir: 'public',
+  // Add specific handling for JSON files
+  assetsInclude: ['**/*.json']
 });

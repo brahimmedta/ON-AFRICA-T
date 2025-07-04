@@ -39,23 +39,31 @@ export function useDataLoader<T>(filePath: string): DataLoaderResult<T> {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
           },
           cache: 'no-cache'
         });
         
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const responseText = await response.text();
+          console.error(`HTTP ${response.status} error for ${publicPath}:`, responseText.substring(0, 200));
+          throw new Error(`Failed to load ${publicPath}: HTTP ${response.status} - ${response.statusText}`);
         }
         
         const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response:', text.substring(0, 200));
-          throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
-        }
+        console.log(`Content-Type: ${contentType}`);
         
-        const jsonData = await response.json();
+        // Try to parse as JSON regardless of content-type header
+        let jsonData;
+        try {
+          const text = await response.text();
+          jsonData = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Failed to parse JSON:', parseError);
+          throw new Error(`Invalid JSON format in ${publicPath}`);
+        }
         
         if (isMounted) {
           setData(jsonData);
@@ -87,25 +95,36 @@ export async function loadSingleData<T>(filePath: string): Promise<T> {
   try {
     const publicPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
     
+    console.log(`Loading single data from: ${publicPath}`);
+    
     const response = await fetch(publicPath, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
       },
       cache: 'no-cache'
     });
     
+    console.log(`Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const responseText = await response.text();
+      console.error(`HTTP ${response.status} error for ${publicPath}:`, responseText.substring(0, 200));
+      throw new Error(`Failed to load ${publicPath}: HTTP ${response.status} - ${response.statusText}`);
     }
     
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+    // Try to parse as JSON regardless of content-type header
+    let jsonData;
+    try {
+      const text = await response.text();
+      jsonData = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError);
+      throw new Error(`Invalid JSON format in ${publicPath}`);
     }
     
-    return await response.json();
+    console.log(`Successfully loaded single data from ${publicPath}`);
+    return jsonData;
   } catch (error) {
     console.error(`Error loading ${filePath}:`, error);
     throw error;
@@ -125,8 +144,12 @@ export function useMultipleDataLoader<T>(filePaths: string[]): DataLoaderResult<
         setLoading(true);
         setError(null);
         
+        console.log(`Loading multiple data files:`, filePaths);
+        
         const promises = filePaths.map(path => loadSingleData<T>(path));
         const results = await Promise.all(promises);
+        
+        console.log(`Successfully loaded ${results.length} data files`);
         
         if (isMounted) {
           setData(results);

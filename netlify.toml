@@ -24,6 +24,13 @@
   to = "/index.html"
   status = 200
 
+# Ensure JSON files are served correctly
+[[headers]]
+  for = "/data/*.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=300"
+
 # Ensure admin directory is accessible
 [[headers]]
   for = "/admin/*"
