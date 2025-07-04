@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, MessageCircle, Shield } from 'lucide-react';
+import { Phone, MessageCircle, Shield, Settings } from 'lucide-react';
 
 interface FooterProps {
   setActiveSection: (section: string) => void;
@@ -95,13 +95,23 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
             © 2025 ON AFRICA TP. Tous droits réservés.
           </p>
           
-          <a
-            href="/login"
-            className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105"
-          >
-            <Shield className="h-4 w-4" />
-            <span className="text-sm">Espace Personnel</span>
-          </a>
+          <div className="flex items-center space-x-4">
+            <a
+              href="/admin"
+              className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="text-sm">Gestion de contenu</span>
+            </a>
+            
+            <a
+              href="/login"
+              className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105"
+            >
+              <Shield className="h-4 w-4" />
+              <span className="text-sm">Espace Personnel</span>
+            </a>
+          </div>
         </div>
       </div>
     </footer>
