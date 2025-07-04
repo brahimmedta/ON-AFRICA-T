@@ -14,7 +14,9 @@ export default defineConfig({
           icons: ['lucide-react']
         }
       }
-    }
+    },
+    // Ensure admin files are copied to dist
+    copyPublicDir: true
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'lucide-react']
@@ -22,5 +24,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
-  }
+  },
+  // Ensure public files are served correctly
+  publicDir: 'public'
 });
