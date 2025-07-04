@@ -1,68 +1,32 @@
 [build]
-  command = "npm run build"
   publish = "dist"
+  command = "npm ci && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--production=false"
 
-# Enable Git Gateway for CMS
-[build.processing]
-  skip_processing = false
-
-# Force redirects for admin access
-[[redirects]]
-  from = "/admin-login"
-  to = "/admin/"
-  status = 302
-  force = true
-
-[[redirects]]
-  from = "/admin-login/*"
-  to = "/admin/"
-  status = 302
-  force = true
-
-# Serve admin files correctly - CRITICAL
-[[redirects]]
-  from = "/admin/*"
-  to = "/admin/index.html"
-  status = 200
-
-# SPA fallback for main site
+# SPA routing - catch all routes and serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Headers for security and performance
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
+# Admin routes - serve admin interface
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
 
-# Special headers for admin - Allow framing for CMS
+# Admin login route
+[[redirects]]
+  from = "/admin-login"
+  to = "/index.html"
+  status = 200
+
+# Ensure admin directory is accessible
 [[headers]]
   for = "/admin/*"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-# Cache static assets
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Ensure admin index is never cached
-[[headers]]
-  for = "/admin/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
+    X-Content-Type-Options = "nosniff"
