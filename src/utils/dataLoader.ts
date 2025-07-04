@@ -6,6 +6,17 @@ export interface DataLoaderResult<T> {
   error: string | null;
 }
 
+export interface SettingsData {
+  company_name: string;
+  logo: string;
+  phone: string;
+  whatsapp: string;
+  fax: string;
+  email: string;
+  bp: string;
+  address: string;
+}
+
 export function useDataLoader<T>(filePath: string): DataLoaderResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
