@@ -1,4 +1,4 @@
-// Data loading utility for CMS collections with cache busting
+// Data loading utility for CMS collections with proper JSON handling
 export interface ServiceData {
   title: string;
   description: string;
@@ -61,7 +61,7 @@ export interface SettingsData {
 const dataCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Load collection data from multiple files with cache busting
+// Load collection data from multiple files
 export async function loadCollectionData<T>(pattern: string): Promise<T[]> {
   const cacheKey = `collection_${pattern}`;
   const now = Date.now();
@@ -76,38 +76,59 @@ export async function loadCollectionData<T>(pattern: string): Promise<T[]> {
   try {
     console.log(`🔄 Loading fresh data for ${pattern}...`);
     
-    // Add cache busting parameter
-    const cacheBuster = `?v=${now}`;
-    const modules = import.meta.glob('/src/data/**/*.json');
-    const matchingModules = Object.keys(modules).filter(path => 
-      path.includes(pattern)
-    );
+    // Define known data files for each collection
+    const collectionFiles: Record<string, string[]> = {
+      services: [
+        '/data/services/construction.json',
+        '/data/services/terrassement.json',
+        '/data/services/amenagement-agricole.json',
+        '/data/services/adduction-eau.json',
+        '/data/services/logistique.json',
+        '/data/services/location-engins.json'
+      ],
+      projects: [
+        '/data/projects/2024-batiment-industriel.json',
+        '/data/projects/2024-terrassement-infrastructure.json',
+        '/data/projects/2023-amenagement-agricole.json',
+        '/data/projects/2023-adduction-eau.json'
+      ],
+      partners: [
+        '/data/partners/partenaires-internationaux.json',
+        '/data/partners/partenaires-locaux.json',
+        '/data/partners/institutions-publiques.json',
+        '/data/partners/partenaires-financiers.json'
+      ]
+    };
     
-    const dataPromises = matchingModules.map(async (path) => {
+    const files = collectionFiles[pattern] || [];
+    
+    const dataPromises = files.map(async (filePath) => {
       try {
-        // Force fresh load by adding cache buster
-        const response = await fetch(path.replace('/src', '') + cacheBuster);
+        // Add cache busting parameter
+        const cacheBuster = `?v=${now}`;
+        const response = await fetch(filePath + cacheBuster);
+        
         if (!response.ok) {
-          throw new Error(`Failed to fetch ${path}: ${response.status}`);
+          console.warn(`Failed to fetch ${filePath}: ${response.status}`);
+          return null;
         }
+        
         const data = await response.json();
         return data;
       } catch (error) {
-        console.warn(`Failed to load ${path}:`, error);
-        // Fallback to import if fetch fails
-        const module = await modules[path]() as { default: T };
-        return module.default;
+        console.warn(`Error loading ${filePath}:`, error);
+        return null;
       }
     });
     
-    const data = await Promise.all(dataPromises);
-    const filteredData = data.filter(Boolean);
+    const results = await Promise.all(dataPromises);
+    const data = results.filter(Boolean); // Remove null values
     
     // Cache the result
-    dataCache.set(cacheKey, { data: filteredData, timestamp: now });
+    dataCache.set(cacheKey, { data, timestamp: now });
     
-    console.log(`✅ Loaded ${filteredData.length} items for ${pattern}`);
-    return filteredData;
+    console.log(`✅ Loaded ${data.length} items for ${pattern}`);
+    return data;
   } catch (error) {
     console.error(`Error loading collection data for ${pattern}:`, error);
     
@@ -121,7 +142,7 @@ export async function loadCollectionData<T>(pattern: string): Promise<T[]> {
   }
 }
 
-// Load single file data with cache busting
+// Load single file data with proper JSON handling
 export async function loadSingleData<T>(filePath: string): Promise<T | null> {
   const cacheKey = `single_${filePath}`;
   const now = Date.now();
@@ -136,31 +157,32 @@ export async function loadSingleData<T>(filePath: string): Promise<T | null> {
   try {
     console.log(`🔄 Loading fresh data for ${filePath}...`);
     
+    // Convert relative path to absolute path
+    const absolutePath = filePath.replace('../', '/');
+    
     // Add cache busting parameter
     const cacheBuster = `?v=${now}`;
     
-    try {
-      // Try fetch first for fresh data
-      const response = await fetch(filePath.replace('../', '/') + cacheBuster);
-      if (response.ok) {
-        const data = await response.json();
-        // Cache the result
-        dataCache.set(cacheKey, { data, timestamp: now });
-        console.log(`✅ Loaded fresh data for ${filePath}`);
-        return data;
+    const response = await fetch(absolutePath + cacheBuster);
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch ${absolutePath}: ${response.status}`);
+      
+      // Return cached data if available, even if expired
+      if (cached) {
+        console.log(`⚠️ Using expired cache for ${filePath} due to fetch error`);
+        return cached.data;
       }
-    } catch (fetchError) {
-      console.warn(`Fetch failed for ${filePath}, trying import:`, fetchError);
+      
+      return null;
     }
     
-    // Fallback to import
-    const module = await import(filePath);
-    const data = module.default;
+    const data = await response.json();
     
     // Cache the result
     dataCache.set(cacheKey, { data, timestamp: now });
     
-    console.log(`✅ Loaded data for ${filePath} via import`);
+    console.log(`✅ Loaded fresh data for ${filePath}`);
     return data;
   } catch (error) {
     console.error(`Error loading data from ${filePath}:`, error);
