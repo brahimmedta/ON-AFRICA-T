@@ -99,6 +99,51 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
+      
+      /* Error message styling */
+      .error-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #dc2626;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+        z-index: 10000;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      /* Success message styling */
+      .success-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #059669;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+        z-index: 10000;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+      }
     </style>
   </head>
   <body>
@@ -116,12 +161,27 @@
     <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
     
     <script>
-      // Initialize CMS without authentication
+      // Initialize CMS with GitHub backend
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing Netlify CMS without authentication...');
+        console.log('🚀 Initializing Netlify CMS with GitHub backend...');
         
-        // Hide loading screen after a short delay
-        setTimeout(() => {
+        let initializationTimeout;
+        let isInitialized = false;
+        
+        function showMessage(message, type = 'info') {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+          messageDiv.textContent = message;
+          document.body.appendChild(messageDiv);
+          
+          setTimeout(() => {
+            if (messageDiv.parentNode) {
+              messageDiv.parentNode.removeChild(messageDiv);
+            }
+          }, 5000);
+        }
+        
+        function hideLoadingScreen() {
           const loadingScreen = document.getElementById('loadingScreen');
           if (loadingScreen) {
             loadingScreen.classList.add('hidden');
@@ -129,7 +189,16 @@
               loadingScreen.style.display = 'none';
             }, 500);
           }
-        }, 2000);
+        }
+        
+        // Set timeout for initialization
+        initializationTimeout = setTimeout(() => {
+          if (!isInitialized) {
+            console.log('⏰ CMS initialization timeout');
+            hideLoadingScreen();
+            showMessage('⚠️ Le CMS prend plus de temps que prévu à charger. Veuillez patienter...', 'error');
+          }
+        }, 10000);
 
         // Initialize CMS
         try {
@@ -144,13 +213,54 @@
               }
             });
             
-            console.log('✅ CMS initialized successfully');
+            // Listen for CMS events
+            window.CMS.registerEventListener({
+              name: 'preSave',
+              handler: ({ entry }) => {
+                console.log('💾 Saving entry:', entry.get('title') || entry.get('name') || 'Untitled');
+                showMessage('💾 Sauvegarde en cours...', 'info');
+                return entry;
+              }
+            });
+            
+            // Mark as initialized
+            isInitialized = true;
+            clearTimeout(initializationTimeout);
+            
+            console.log('✅ CMS initialized successfully with GitHub backend');
+            
+            // Hide loading screen after successful initialization
+            setTimeout(() => {
+              hideLoadingScreen();
+              showMessage('✅ Système de gestion de contenu chargé avec succès!', 'success');
+            }, 2000);
+            
           } else {
             console.error('❌ Netlify CMS not loaded');
+            hideLoadingScreen();
+            showMessage('❌ Erreur: Netlify CMS non disponible', 'error');
           }
         } catch (error) {
           console.error('❌ Error initializing CMS:', error);
+          hideLoadingScreen();
+          showMessage('❌ Erreur lors de l\'initialisation du CMS: ' + error.message, 'error');
         }
+        
+        // Additional error handling for network issues
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('CMS')) {
+            console.error('❌ CMS Error:', e.message);
+            showMessage('❌ Erreur CMS: ' + e.message, 'error');
+          }
+        });
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('❌ Unhandled promise rejection:', e.reason);
+          if (e.reason && e.reason.toString().includes('CMS')) {
+            showMessage('❌ Erreur de connexion au CMS', 'error');
+          }
+        });
       });
     </script>
   </body>

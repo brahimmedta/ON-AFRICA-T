@@ -1,6 +1,8 @@
 backend:
-  name: test-repo
-  # Remove git-gateway backend to disable authentication
+  name: github
+  repo: brahimmedta/ON-AFRICA-TP11
+  branch: main
+  # No auth required - public access
 
 # Enable local development
 local_backend: true
@@ -134,9 +136,6 @@ collections:
       - { label: "🌐 Site web", name: "website", widget: "string", required: false, pattern: ['^https?://.+', 'URL invalide (doit commencer par http:// ou https://)'], hint: "Site web du partenaire (optionnel)" }
       - { label: "📧 Email", name: "email", widget: "string", required: false, pattern: ['^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', 'Format email invalide'], hint: "Email de contact (optionnel)" }
       - { label: "🏷️ Type de partenariat", name: "partnership_type", widget: "select", options: ["Fournisseur", "Client", "Sous-traitant", "Partenaire technique", "Partenaire financier", "Autre"], default: "Partenaire technique" }
-
-# Remove editorial workflow to disable authentication
-# publish_mode: editorial_workflow
 
 # Media library settings
 media_library:
