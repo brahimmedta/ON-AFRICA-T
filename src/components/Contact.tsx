@@ -7,7 +7,7 @@ const Contact = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      const data = await loadSingleData<SettingsData>('../data/settings.json');
+      const data = await loadSingleData<SettingsData>('data/settings.json');
       setSettingsData(data);
     };
 
