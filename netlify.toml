@@ -12,28 +12,9 @@
   to = "/index.html"
   status = 200
 
-# Admin routes - serve admin interface
-[[redirects]]
-  from = "/admin/*"
-  to = "/admin/index.html"
-  status = 200
-
-# Admin login route
-[[redirects]]
-  from = "/admin-login"
-  to = "/index.html"
-  status = 200
-
 # Ensure JSON files are served correctly
 [[headers]]
   for = "/data/*.json"
   [headers.values]
     Content-Type = "application/json"
     Cache-Control = "public, max-age=300"
-
-# Ensure admin directory is accessible
-[[headers]]
-  for = "/admin/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
