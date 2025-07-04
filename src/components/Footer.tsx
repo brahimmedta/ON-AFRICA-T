@@ -96,11 +96,11 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
           </p>
           
           <a
-            href="/admin-login"
+            href="/login"
             className="flex items-center space-x-2 text-blue-200 hover:text-white transition-colors duration-300 transform hover:scale-105"
           >
             <Shield className="h-4 w-4" />
-            <span className="text-sm">Administration</span>
+            <span className="text-sm">Espace Personnel</span>
           </a>
         </div>
       </div>

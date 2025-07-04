@@ -8,14 +8,14 @@ import Realizations from './components/Realizations';
 import Partners from './components/Partners';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import Login from './components/Login';
 
 function App() {
   const [activeSection, setActiveSection] = useState('accueil');
 
-  // Check if we're on any admin route - redirect to admin page
-  if (window.location.pathname.startsWith('/admin')) {
-    // Let the admin page handle itself
-    return null;
+  // Check if we're on the login page
+  if (window.location.pathname === '/login') {
+    return <Login />;
   }
 
   const renderActiveSection = () => {
