@@ -1,51 +1,94 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Building, Hammer, Sprout, Droplets, Truck, Wrench, Plus } from 'lucide-react';
+import { loadCollectionData, type ServiceData } from '../utils/dataLoader';
 
 const Services = () => {
-  const services = [
+  const [services, setServices] = useState<ServiceData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await loadCollectionData<ServiceData>('services');
+        setServices(data);
+      } catch (error) {
+        console.error('Error loading services:', error);
+        // Fallback to default services if loading fails
+        setServices(defaultServices);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Icon mapping
+  const getIcon = (iconName: string) => {
+    const icons = {
+      Building,
+      Hammer,
+      Sprout,
+      Droplets,
+      Truck,
+      Wrench,
+      Plus
+    };
+    return icons[iconName as keyof typeof icons] || Building;
+  };
+
+  // Default services as fallback
+  const defaultServices: ServiceData[] = [
     {
-      icon: Building,
+      icon: 'Building',
       title: 'Construction de bâtiments',
       description: 'Réalisation de bâtiments publics, privés et industriels avec des standards de qualité élevés et des finitions soignées.',
       image: 'https://i.postimg.cc/HLwm2xp1/9d4f801b.jpg'
     },
     {
-      icon: Hammer,
+      icon: 'Hammer',
       title: 'Travaux de terrassement et de voirie',
       description: 'Terrassement, nivellement et aménagement de voiries pour tous types de projets d\'infrastructure.',
       image: 'https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg'
     },
     {
-      icon: Sprout,
+      icon: 'Sprout',
       title: 'Aménagements agricoles',
       description: 'Création de pistes rurales et aménagement de périmètres irrigués pour soutenir le développement agricole.',
       image: 'https://i.postimg.cc/QCPvsGXq/c981b834.jpg'
     },
     {
-      icon: Droplets,
+      icon: 'Droplets',
       title: 'Adduction d\'eau potable',
       description: 'Réalisation de forages et installation de réseaux hydrauliques pour l\'approvisionnement en eau potable.',
       image: 'https://i.postimg.cc/Rh3bgscJ/05cc3b44.jpg'
     },
     {
-      icon: Truck,
+      icon: 'Truck',
       title: 'Logistique et transport de marchandises',
       description: 'Services de transport et de logistique pour l\'acheminement sécurisé de vos marchandises.',
       image: 'https://i.postimg.cc/0y1HCCrr/6f1f99f.jpg'
     },
     {
-      icon: Wrench,
+      icon: 'Wrench',
       title: 'Location de camions et d\'engins lourds',
       description: 'Mise à disposition d\'équipements lourds et spécialisés avec opérateurs qualifiés.',
       image: 'https://i.postimg.cc/Y25wJYhB/62fc8b03.jpg'
-    },
-    {
-      icon: Plus,
-      title: 'Divers autres services',
-      description: 'Nous proposons également d\'autres services spécialisés selon vos besoins spécifiques.',
-      image: 'https://i.postimg.cc/5yvDxK6d/deba58d9.jpg'
     }
   ];
+
+  const servicesToRender = services.length > 0 ? services : defaultServices;
+
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-gray-50 py-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des services...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-gray-50 py-20 relative overflow-hidden">
@@ -69,8 +112,8 @@ const Services = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {services.map((service, index) => {
-            const IconComponent = service.icon;
+          {servicesToRender.map((service, index) => {
+            const IconComponent = getIcon(service.icon);
             return (
               <div
                 key={index}
@@ -96,6 +139,16 @@ const Services = () => {
                   <p className="text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors duration-300">
                     {service.description}
                   </p>
+                  {service.price_range && (
+                    <p className="text-sm text-[#37bdf8] mt-2 font-medium">
+                      Prix: {service.price_range}
+                    </p>
+                  )}
+                  {service.duration && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Durée: {service.duration}
+                    </p>
+                  )}
                 </div>
               </div>
             );

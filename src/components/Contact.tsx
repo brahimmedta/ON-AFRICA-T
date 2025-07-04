@@ -1,42 +1,62 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, MessageCircle, Fan as Fax, Building } from 'lucide-react';
+import { loadSingleData, type SettingsData } from '../utils/dataLoader';
 
 const Contact = () => {
+  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await loadSingleData<SettingsData>('../data/settings.json');
+      setSettingsData(data);
+    };
+
+    loadData();
+  }, []);
+
+  // Default values while loading
+  const phone = settingsData?.phone || '+222 28880729';
+  const whatsapp = settingsData?.whatsapp || '+34 666 39 63 36';
+  const fax = settingsData?.fax || '+222 25901252';
+  const email = settingsData?.email || 'salesonafrica@onafricatp.com';
+  const bp = settingsData?.bp || '06992';
+  const address = settingsData?.address || 'Nouakchott, Mauritanie';
+
   const contactInfo = [
     {
       icon: Phone,
       label: 'Téléphone',
-      value: '+222 28880729',
-      href: 'tel:+22228880729'
+      value: phone,
+      href: `tel:${phone.replace(/\s/g, '')}`
     },
     {
       icon: MessageCircle,
       label: 'WhatsApp',
-      value: '+34 666 39 63 36',
-      href: 'https://wa.me/34666396336'
+      value: whatsapp,
+      href: `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`
     },
     {
       icon: Fax,
       label: 'Fax',
-      value: '+222 25901252',
-      href: 'tel:+22225901252'
+      value: fax,
+      href: `tel:${fax.replace(/\s/g, '')}`
     },
     {
       icon: Mail,
       label: 'Email',
-      value: 'salesonafrica@onafricatp.com',
-      href: 'mailto:salesonafrica@onafricatp.com'
+      value: email,
+      href: `mailto:${email}`
     },
     {
       icon: Building,
       label: 'BP',
-      value: '06992',
+      value: bp,
       href: null
     },
     {
       icon: MapPin,
       label: 'Adresse',
-      value: 'Nouakchott, Mauritanie',
+      value: address,
       href: 'https://maps.google.com/?q=Nouakchott,Mauritanie'
     }
   ];
@@ -107,7 +127,7 @@ const Contact = () => {
             {/* Company Info */}
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 transform hover:scale-105 transition-transform duration-300 hover:shadow-xl animate-fadeInUp delay-300">
               <h3 className="text-2xl font-bold text-[#08295f] mb-4">
-                ON AFRICA TP
+                {settingsData?.company_name || 'ON AFRICA TP'}
               </h3>
               <p className="text-gray-600 leading-relaxed">
                 Votre partenaire de confiance pour tous vos projets de construction, 

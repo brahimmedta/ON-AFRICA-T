@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Building, Truck, Droplets, Phone, MessageCircle } from 'lucide-react';
+import { loadSingleData, type HeroData, type SettingsData } from '../utils/dataLoader';
 
 const Hero = () => {
+  const [heroData, setHeroData] = useState<HeroData | null>(null);
+  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
   const [counters, setCounters] = useState({
     experience: 0,
     projects: 0,
@@ -10,8 +13,30 @@ const Hero = () => {
   });
 
   useEffect(() => {
+    // Load hero and settings data
+    const loadData = async () => {
+      const [hero, settings] = await Promise.all([
+        loadSingleData<HeroData>('../data/hero.json'),
+        loadSingleData<SettingsData>('../data/settings.json')
+      ]);
+      
+      setHeroData(hero);
+      setSettingsData(settings);
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!heroData) return;
+
     const animateCounters = () => {
-      const targets = { experience: 15, projects: 200, partners: 50, satisfaction: 100 };
+      const targets = { 
+        experience: heroData.experience_years, 
+        projects: heroData.projects_count, 
+        partners: heroData.partners_count, 
+        satisfaction: heroData.satisfaction_rate 
+      };
       const duration = 2000;
       const steps = 60;
       const stepDuration = duration / steps;
@@ -37,14 +62,21 @@ const Hero = () => {
 
     const timer = setTimeout(animateCounters, 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [heroData]);
+
+  // Default values while loading
+  const title = heroData?.title || "ON AFRICA TP";
+  const subtitle = heroData?.subtitle || "Construire l'Afrique de demain, aujourd'hui";
+  const description = heroData?.description || "Spécialiste en BTP, logistique et travaux publics basé à Nouakchott, Mauritanie";
+  const phone = settingsData?.phone || "+222 28880729";
+  const whatsapp = settingsData?.whatsapp || "+34 666 39 63 36";
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-[#08295f] via-blue-800 to-[#08295f] text-white relative overflow-hidden">
       {/* Background watermark logo */}
       <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
         <img 
-          src="https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png" 
+          src={settingsData?.logo || "https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png"} 
           alt="ON AFRICA TP Watermark"
           className="w-96 h-96 lg:w-[600px] lg:h-[600px] object-contain animate-pulse"
         />
@@ -58,13 +90,19 @@ const Hero = () => {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="text-center mb-16 animate-fadeInUp">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 transform hover:scale-105 transition-transform duration-500">
-            ON <span className="text-[#37bdf8] animate-pulse">AFRICA TP</span>
+            {title.includes('ON AFRICA TP') ? (
+              <>
+                ON <span className="text-[#37bdf8] animate-pulse">AFRICA TP</span>
+              </>
+            ) : (
+              <span className="text-[#37bdf8] animate-pulse">{title}</span>
+            )}
           </h1>
           <p className="text-2xl lg:text-3xl text-blue-200 max-w-4xl mx-auto leading-relaxed transform hover:scale-105 transition-transform duration-300 mb-12">
-            Construire l'Afrique de demain, aujourd'hui
+            {subtitle}
           </p>
           <p className="text-lg lg:text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed transform hover:scale-105 transition-transform duration-300">
-            Spécialiste en BTP, logistique et travaux publics basé à Nouakchott, Mauritanie
+            {description}
           </p>
         </div>
 
@@ -75,7 +113,7 @@ const Hero = () => {
           
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="tel:+22228880729"
+              href={`tel:${phone.replace(/\s/g, '')}`}
               className="bg-[#37bdf8] hover:bg-blue-500 text-white px-8 py-4 rounded-full font-semibold flex items-center space-x-2 transition-all duration-300 shadow-lg transform hover:scale-110 hover:shadow-xl"
             >
               <Phone className="h-5 w-5 animate-pulse" />
@@ -83,7 +121,7 @@ const Hero = () => {
             </a>
             
             <a
-              href="https://wa.me/34666396336"
+              href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold flex items-center space-x-2 transition-all duration-300 shadow-lg transform hover:scale-110 hover:shadow-xl"

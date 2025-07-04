@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Phone, MessageCircle, Shield } from 'lucide-react';
+import { loadSingleData, type SettingsData } from '../utils/dataLoader';
 
 interface FooterProps {
   setActiveSection: (section: string) => void;
 }
 
 const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
+  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await loadSingleData<SettingsData>('../data/settings.json');
+      setSettingsData(data);
+    };
+
+    loadData();
+  }, []);
+
+  // Default values while loading
+  const logo = settingsData?.logo || "https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png";
+  const companyName = settingsData?.company_name || "ON AFRICA TP";
+  const phone = settingsData?.phone || "+222 28880729";
+  const whatsapp = settingsData?.whatsapp || "+34 666 39 63 36";
+  const fax = settingsData?.fax || "+222 25901252";
+  const bp = settingsData?.bp || "06992";
+
   return (
     <footer className="bg-[#08295f] text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,11 +34,13 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
           <div className="space-y-4 animate-fadeInUp">
             <div className="flex items-center space-x-3 group">
               <img 
-                src="https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png" 
-                alt="ON AFRICA TP"
+                src={logo} 
+                alt={companyName}
                 className="h-10 w-10 transform group-hover:scale-110 transition-transform duration-300"
               />
-              <span className="text-xl font-bold group-hover:text-[#37bdf8] transition-colors duration-300">ON AFRICA TP</span>
+              <span className="text-xl font-bold group-hover:text-[#37bdf8] transition-colors duration-300">
+                {companyName}
+              </span>
             </div>
             <p className="text-blue-200 leading-relaxed transform hover:scale-105 transition-transform duration-300">
               Spécialiste en BTP, logistique et travaux publics. Construire l'Afrique de demain, aujourd'hui.
@@ -73,18 +95,18 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
             <div className="space-y-3">
               <div className="flex items-center space-x-2 transform hover:scale-105 transition-transform duration-300">
                 <Phone className="h-4 w-4 text-[#37bdf8]" />
-                <span className="text-blue-200">+222 25901252</span>
+                <span className="text-blue-200">{fax}</span>
               </div>
               <div className="flex items-center space-x-2 transform hover:scale-105 transition-transform duration-300">
                 <Phone className="h-4 w-4 text-[#37bdf8]" />
-                <span className="text-blue-200">+222 28880729</span>
+                <span className="text-blue-200">{phone}</span>
               </div>
               <div className="flex items-center space-x-2 transform hover:scale-105 transition-transform duration-300">
                 <MessageCircle className="h-4 w-4 text-green-400" />
-                <span className="text-blue-200">+34 666 39 63 36</span>
+                <span className="text-blue-200">{whatsapp}</span>
               </div>
               <div className="text-blue-200 transform hover:scale-105 transition-transform duration-300">
-                <p>BP: 06992</p>
+                <p>BP: {bp}</p>
               </div>
             </div>
           </div>
@@ -92,7 +114,7 @@ const Footer: React.FC<FooterProps> = ({ setActiveSection }) => {
 
         <div className="border-t border-blue-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center animate-fadeInUp delay-800">
           <p className="text-blue-200 transform hover:scale-105 transition-transform duration-300 mb-4 md:mb-0">
-            © 2025 ON AFRICA TP. Tous droits réservés.
+            © 2025 {companyName}. Tous droits réservés.
           </p>
           
           <a

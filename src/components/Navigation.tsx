@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { loadSingleData, type SettingsData } from '../utils/dataLoader';
 
 interface NavigationProps {
   activeSection: string;
@@ -8,6 +9,16 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeSection, setActiveSection }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await loadSingleData<SettingsData>('../data/settings.json');
+      setSettingsData(data);
+    };
+
+    loadData();
+  }, []);
 
   const navItems = [
     { id: 'accueil', label: 'Accueil' },
@@ -24,6 +35,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeSection, setActiveSection
     setIsMobileMenuOpen(false);
   };
 
+  // Default values while loading
+  const logo = settingsData?.logo || "https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png";
+  const companyName = settingsData?.company_name || "ON AFRICA TP";
+
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-lg border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,13 +51,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeSection, setActiveSection
             >
               <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-[#08295f] to-[#37bdf8] rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
                 <img 
-                  src="https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png" 
-                  alt="ON AFRICA TP"
+                  src={logo} 
+                  alt={companyName}
                   className="h-8 w-8 lg:h-10 lg:w-10 object-contain"
                 />
               </div>
               <span className="text-[#08295f] font-bold text-lg lg:text-xl group-hover:text-[#37bdf8] transition-colors duration-300 whitespace-nowrap">
-                ON AFRICA TP
+                {companyName}
               </span>
             </button>
           </div>

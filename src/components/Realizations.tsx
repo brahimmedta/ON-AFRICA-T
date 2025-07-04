@@ -1,68 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { loadCollectionData, type ProjectData } from '../utils/dataLoader';
 
 const Realizations = () => {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await loadCollectionData<ProjectData>('projects');
+        setProjects(data);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        // Fallback to default projects if loading fails
+        setProjects(defaultProjects);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Default projects as fallback
+  const defaultProjects: ProjectData[] = [
     {
       image: 'https://i.postimg.cc/HLwm2xp1/9d4f801b.jpg',
       title: 'Construction de bâtiment industriel',
-      description: 'Réalisation d\'un complexe industriel moderne'
+      description: 'Réalisation d\'un complexe industriel moderne',
+      year: 2024,
+      category: 'Construction'
     },
     {
       image: 'https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg',
       title: 'Travaux de terrassement',
-      description: 'Aménagement de terrain pour projet d\'infrastructure'
+      description: 'Aménagement de terrain pour projet d\'infrastructure',
+      year: 2024,
+      category: 'Terrassement'
     },
     {
       image: 'https://i.postimg.cc/QCPvsGXq/c981b834.jpg',
       title: 'Aménagement agricole',
-      description: 'Création de périmètre irrigué'
+      description: 'Création de périmètre irrigué',
+      year: 2023,
+      category: 'Aménagement agricole'
     },
     {
       image: 'https://i.postimg.cc/Rh3bgscJ/05cc3b44.jpg',
       title: 'Adduction d\'eau potable',
-      description: 'Installation de réseau hydraulique'
+      description: 'Installation de réseau hydraulique',
+      year: 2023,
+      category: 'Adduction d\'eau'
     },
     {
       image: 'https://i.postimg.cc/0y1HCCrr/6f1f99f.jpg',
       title: 'Transport de marchandises',
-      description: 'Logistique et transport sécurisé'
+      description: 'Logistique et transport sécurisé',
+      year: 2024,
+      category: 'Logistique'
     },
     {
       image: 'https://i.postimg.cc/Y25wJYhB/62fc8b03.jpg',
       title: 'Location d\'engins lourds',
-      description: 'Mise à disposition d\'équipements spécialisés'
-    },
-    {
-      image: 'https://i.postimg.cc/5yvDxK6d/deba58d9.jpg',
-      title: 'Projet de construction',
-      description: 'Réalisation de bâtiment public'
-    },
-    {
-      image: 'https://i.postimg.cc/7hgQvCWq/5937acb7.jpg',
-      title: 'Travaux de voirie',
-      description: 'Aménagement de routes et voiries'
-    },
-    {
-      image: 'https://i.postimg.cc/gjq4SCxJ/da350119.jpg',
-      title: 'Infrastructure hydraulique',
-      description: 'Réalisation de forage et équipements'
+      description: 'Mise à disposition d\'équipements spécialisés',
+      year: 2024,
+      category: 'Autre'
     }
   ];
 
+  const projectsToRender = projects.length > 0 ? projects : defaultProjects;
+
   const nextImage = () => {
     if (selectedImage !== null) {
-      setSelectedImage((selectedImage + 1) % projects.length);
+      setSelectedImage((selectedImage + 1) % projectsToRender.length);
     }
   };
 
   const prevImage = () => {
     if (selectedImage !== null) {
-      setSelectedImage((selectedImage - 1 + projects.length) % projects.length);
+      setSelectedImage((selectedImage - 1 + projectsToRender.length) % projectsToRender.length);
     }
   };
+
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-white py-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des réalisations...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-white py-20 relative overflow-hidden">
@@ -86,7 +117,7 @@ const Realizations = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project, index) => (
+          {projectsToRender.map((project, index) => (
             <div
               key={index}
               className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-1 cursor-pointer border border-gray-100 animate-fadeInUp"
@@ -105,9 +136,22 @@ const Realizations = () => {
                   <h3 className="text-white font-bold text-lg mb-1">
                     {project.title}
                   </h3>
-                  <p className="text-white/80 text-sm">
+                  <p className="text-white/80 text-sm mb-1">
                     {project.description}
                   </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-xs">
+                      {project.year}
+                    </span>
+                    <span className="bg-[#37bdf8] text-white text-xs px-2 py-1 rounded-full">
+                      {project.category}
+                    </span>
+                  </div>
+                  {project.location && (
+                    <p className="text-white/60 text-xs mt-1">
+                      📍 {project.location}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -140,18 +184,36 @@ const Realizations = () => {
               </button>
               
               <img
-                src={projects[selectedImage].image}
-                alt={projects[selectedImage].title}
+                src={projectsToRender[selectedImage].image}
+                alt={projectsToRender[selectedImage].title}
                 className="max-w-full max-h-full object-contain rounded-2xl transform hover:scale-105 transition-transform duration-300"
               />
               
               <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-xl p-4 transform hover:scale-105 transition-transform duration-300">
                 <h3 className="text-white font-bold text-xl mb-2">
-                  {projects[selectedImage].title}
+                  {projectsToRender[selectedImage].title}
                 </h3>
-                <p className="text-white/80">
-                  {projects[selectedImage].description}
+                <p className="text-white/80 mb-2">
+                  {projectsToRender[selectedImage].description}
                 </p>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-white/60">
+                    Année: {projectsToRender[selectedImage].year}
+                  </span>
+                  <span className="bg-[#37bdf8] text-white px-3 py-1 rounded-full">
+                    {projectsToRender[selectedImage].category}
+                  </span>
+                </div>
+                {projectsToRender[selectedImage].location && (
+                  <p className="text-white/60 text-sm mt-2">
+                    📍 {projectsToRender[selectedImage].location}
+                  </p>
+                )}
+                {projectsToRender[selectedImage].client && (
+                  <p className="text-white/60 text-sm mt-1">
+                    Client: {projectsToRender[selectedImage].client}
+                  </p>
+                )}
               </div>
             </div>
           </div>

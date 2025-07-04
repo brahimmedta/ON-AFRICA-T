@@ -1,29 +1,67 @@
-import React from 'react';
-import { Handshake, Users, Globe, Award } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { loadCollectionData, type PartnerData } from '../utils/dataLoader';
 
 const Partners = () => {
-  const partnerCards = [
+  const [partners, setPartners] = useState<PartnerData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await loadCollectionData<PartnerData>('partners');
+        setPartners(data);
+      } catch (error) {
+        console.error('Error loading partners:', error);
+        // Fallback to default partners if loading fails
+        setPartners(defaultPartners);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Default partners as fallback
+  const defaultPartners: PartnerData[] = [
     {
-      image: 'https://i.postimg.cc/HLwm2xp1/9d4f801b.jpg',
-      title: 'Partenaires Internationaux',
-      description: 'Collaboration avec des entreprises mondiales pour des projets d\'envergure'
+      name: 'Partenaires Internationaux',
+      description: 'Collaboration avec des entreprises mondiales pour des projets d\'envergure',
+      logo: 'https://i.postimg.cc/HLwm2xp1/9d4f801b.jpg',
+      partnership_type: 'Partenaire technique'
     },
     {
-      image: 'https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg',
-      title: 'Partenaires Locaux',
-      description: 'Réseau solide de partenaires mauritaniens et africains'
+      name: 'Partenaires Locaux',
+      description: 'Réseau solide de partenaires mauritaniens et africains',
+      logo: 'https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg',
+      partnership_type: 'Partenaire technique'
     },
     {
-      image: 'https://i.postimg.cc/QCPvsGXq/c981b834.jpg',
-      title: 'Institutions Publiques',
-      description: 'Collaboration avec les organismes gouvernementaux et publics'
+      name: 'Institutions Publiques',
+      description: 'Collaboration avec les organismes gouvernementaux et publics',
+      logo: 'https://i.postimg.cc/QCPvsGXq/c981b834.jpg',
+      partnership_type: 'Client'
     },
     {
-      image: 'https://i.postimg.cc/Rh3bgscJ/05cc3b44.jpg',
-      title: 'Partenaires Financiers',
-      description: 'Relations privilégiées avec les institutions financières'
+      name: 'Partenaires Financiers',
+      description: 'Relations privilégiées avec les institutions financières',
+      logo: 'https://i.postimg.cc/Rh3bgscJ/05cc3b44.jpg',
+      partnership_type: 'Partenaire financier'
     }
   ];
+
+  const partnersToRender = partners.length > 0 ? partners : defaultPartners;
+
+  if (loading) {
+    return (
+      <section className="min-h-screen bg-gray-50 py-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des partenaires...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-gray-50 py-20 relative overflow-hidden">
@@ -48,7 +86,7 @@ const Partners = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {partnerCards.map((partner, index) => (
+          {partnersToRender.map((partner, index) => (
             <div
               key={index}
               className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-1 border border-gray-100 animate-fadeInUp"
@@ -56,22 +94,46 @@ const Partners = () => {
             >
               <div className="relative h-48 overflow-hidden">
                 <img
-                  src={partner.image}
-                  alt={partner.title}
+                  src={partner.logo}
+                  alt={partner.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-4 right-4">
                   <h3 className="text-white font-bold text-xl mb-2 transform group-hover:scale-105 transition-transform duration-300">
-                    {partner.title}
+                    {partner.name}
                   </h3>
+                  <span className="bg-[#37bdf8] text-white text-xs px-3 py-1 rounded-full">
+                    {partner.partnership_type}
+                  </span>
                 </div>
               </div>
               
               <div className="p-6">
-                <p className="text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors duration-300">
+                <p className="text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors duration-300 mb-4">
                   {partner.description}
                 </p>
+                
+                <div className="flex flex-wrap gap-2">
+                  {partner.website && (
+                    <a
+                      href={partner.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#37bdf8] hover:text-[#08295f] text-sm font-medium transition-colors duration-300"
+                    >
+                      🌐 Site web
+                    </a>
+                  )}
+                  {partner.email && (
+                    <a
+                      href={`mailto:${partner.email}`}
+                      className="text-[#37bdf8] hover:text-[#08295f] text-sm font-medium transition-colors duration-300"
+                    >
+                      📧 Contact
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}
