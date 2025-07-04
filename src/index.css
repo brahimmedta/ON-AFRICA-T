@@ -75,6 +75,24 @@ body {
   }
 }
 
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(55, 189, 248, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(55, 189, 248, 0.6);
+  }
+}
+
+@keyframes rotate-3d {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
 .animate-fadeInUp {
   animation: fadeInUp 0.8s ease-out;
   will-change: transform, opacity;
@@ -93,6 +111,14 @@ body {
 .animate-float-delayed {
   animation: float-delayed 8s ease-in-out infinite;
   will-change: transform;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-rotate-3d {
+  animation: rotate-3d 20s linear infinite;
 }
 
 /* Delay classes */
@@ -132,8 +158,40 @@ body {
 
 /* Professional hover effects */
 .hover-lift:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) rotateX(5deg);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* 3D Card effects */
+.card-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: rotateY(5deg) rotateX(5deg);
+}
+
+/* Text shadow for better readability */
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom gradient backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #08295f 0%, #37bdf8 100%);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, #37bdf8 0%, #08295f 100%);
 }
 
 /* Responsive design helpers */
@@ -144,8 +202,14 @@ body {
   
   /* Reduce motion for mobile performance */
   .animate-float,
-  .animate-float-delayed {
+  .animate-float-delayed,
+  .animate-rotate-3d {
     animation: none;
+  }
+  
+  /* Simplify 3D effects on mobile */
+  .card-3d:hover {
+    transform: scale(1.02);
   }
 }
 
@@ -154,11 +218,55 @@ body {
   .animate-fadeInUp,
   .animate-fadeIn,
   .animate-float,
-  .animate-float-delayed {
+  .animate-float-delayed,
+  .animate-pulse-glow,
+  .animate-rotate-3d {
     animation: none;
   }
   
   .transition-all {
     transition: none;
+  }
+  
+  .card-3d:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bg-gradient-primary,
+  .bg-gradient-secondary {
+    background: #08295f;
+  }
+  
+  .text-gray-600 {
+    color: #000;
+  }
+  
+  .text-gray-300 {
+    color: #fff;
+  }
+}
+
+/* Print styles */
+@media print {
+  .animate-fadeInUp,
+  .animate-fadeIn,
+  .animate-float,
+  .animate-float-delayed,
+  .animate-pulse-glow,
+  .animate-rotate-3d {
+    animation: none;
+  }
+  
+  .transform {
+    transform: none !important;
+  }
+  
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none;
   }
 }
