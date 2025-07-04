@@ -1,5 +1,9 @@
 backend:
-  name: test-repo
+  name: git-gateway
+  branch: main
+
+# Enable local development
+local_backend: true
 
 # Media management
 media_folder: "public/images"
@@ -131,8 +135,8 @@ collections:
       - { label: "📧 Email", name: "email", widget: "string", required: false, pattern: ['^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', 'Format email invalide'], hint: "Email de contact (optionnel)" }
       - { label: "🏷️ Type de partenariat", name: "partnership_type", widget: "select", options: ["Fournisseur", "Client", "Sous-traitant", "Partenaire technique", "Partenaire financier", "Autre"], default: "Partenaire technique" }
 
-# Editorial workflow disabled for test mode
-publish_mode: simple
+# Editorial workflow for content approval
+publish_mode: editorial_workflow
 
 # Media library settings
 media_library:
