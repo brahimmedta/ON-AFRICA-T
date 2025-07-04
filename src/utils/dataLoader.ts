@@ -30,23 +30,52 @@ export function useDataLoader<T>(filePath: string): DataLoaderResult<T> {
         setLoading(true);
         setError(null);
         
-        // Convert relative path to absolute path from public directory
-        const publicPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+        // Ensure the path starts with / and points to the correct location
+        let publicPath = filePath;
+        if (!publicPath.startsWith('/')) {
+          publicPath = `/${publicPath}`;
+        }
         
-        const response = await fetch(publicPath);
+        // Add cache busting parameter to avoid cached responses
+        const cacheBuster = `?v=${Date.now()}`;
+        const fullPath = `${publicPath}${cacheBuster}`;
+        
+        console.log(`Loading data from: ${fullPath}`);
+        
+        const response = await fetch(fullPath, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-cache'
+        });
+        
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Try to get the response text to see what was actually returned
+          const responseText = await response.text();
+          console.error(`HTTP ${response.status} error for ${publicPath}:`, responseText.substring(0, 200));
+          throw new Error(`Failed to load ${publicPath}: HTTP ${response.status} - ${response.statusText}`);
         }
         
         const contentType = response.headers.get('content-type');
+        console.log(`Content-Type: ${contentType}`);
+        
         if (!contentType || !contentType.includes('application/json')) {
           const text = await response.text();
-          console.error('Expected JSON but received:', text.substring(0, 100));
-          throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+          console.error('Expected JSON but received:', {
+            contentType,
+            responseStart: text.substring(0, 200),
+            url: fullPath
+          });
+          throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}. The file ${publicPath} may not exist or is not accessible.`);
         }
         
         const jsonData = await response.json();
+        console.log(`Successfully loaded data from ${publicPath}:`, jsonData);
         
         if (isMounted) {
           setData(jsonData);
@@ -75,23 +104,52 @@ export function useDataLoader<T>(filePath: string): DataLoaderResult<T> {
 
 export async function loadSingleData<T>(filePath: string): Promise<T> {
   try {
-    // Convert relative path to absolute path from public directory
-    const publicPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+    // Ensure the path starts with / and points to the correct location
+    let publicPath = filePath;
+    if (!publicPath.startsWith('/')) {
+      publicPath = `/${publicPath}`;
+    }
     
-    const response = await fetch(publicPath);
+    // Add cache busting parameter to avoid cached responses
+    const cacheBuster = `?v=${Date.now()}`;
+    const fullPath = `${publicPath}${cacheBuster}`;
+    
+    console.log(`Loading single data from: ${fullPath}`);
+    
+    const response = await fetch(fullPath, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache'
+    });
+    
+    console.log(`Response status: ${response.status}`);
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const responseText = await response.text();
+      console.error(`HTTP ${response.status} error for ${publicPath}:`, responseText.substring(0, 200));
+      throw new Error(`Failed to load ${publicPath}: HTTP ${response.status} - ${response.statusText}`);
     }
     
     const contentType = response.headers.get('content-type');
+    console.log(`Content-Type: ${contentType}`);
+    
     if (!contentType || !contentType.includes('application/json')) {
       const text = await response.text();
-      console.error('Expected JSON but received:', text.substring(0, 100));
-      throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+      console.error('Expected JSON but received:', {
+        contentType,
+        responseStart: text.substring(0, 200),
+        url: fullPath
+      });
+      throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}. The file ${publicPath} may not exist or is not accessible.`);
     }
     
-    return await response.json();
+    const jsonData = await response.json();
+    console.log(`Successfully loaded single data from ${publicPath}:`, jsonData);
+    
+    return jsonData;
   } catch (error) {
     console.error(`Error loading data from ${filePath}:`, error);
     throw error;
@@ -111,8 +169,12 @@ export function useMultipleDataLoader<T>(filePaths: string[]): DataLoaderResult<
         setLoading(true);
         setError(null);
         
+        console.log(`Loading multiple data files:`, filePaths);
+        
         const promises = filePaths.map(path => loadSingleData<T>(path));
         const results = await Promise.all(promises);
+        
+        console.log(`Successfully loaded ${results.length} data files`);
         
         if (isMounted) {
           setData(results);
