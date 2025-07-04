@@ -8,14 +8,14 @@ import Realizations from './components/Realizations';
 import Partners from './components/Partners';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import Login from './components/Login';
+import AdminLogin from './components/AdminLogin';
 
 function App() {
   const [activeSection, setActiveSection] = useState('accueil');
 
-  // Check if we're on the login page
-  if (window.location.pathname === '/login') {
-    return <Login />;
+  // Check if we're on the admin login page
+  if (window.location.pathname === '/admin-login') {
+    return <AdminLogin />;
   }
 
   const renderActiveSection = () => {
