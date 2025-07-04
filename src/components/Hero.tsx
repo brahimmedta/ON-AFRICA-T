@@ -1,161 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import { Building, Truck, Droplets, Phone, MessageCircle } from 'lucide-react';
-import { loadSingleData, type HeroData, type SettingsData } from '../utils/dataLoader';
+import React from 'react';
+import { ArrowRight, Users, Building, Award, Calendar } from 'lucide-react';
+import { useDataLoader } from '../utils/dataLoader';
 
-const Hero = () => {
-  const [heroData, setHeroData] = useState<HeroData | null>(null);
-  const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
-  const [counters, setCounters] = useState({
-    experience: 0,
-    projects: 0,
-    partners: 0,
-    satisfaction: 0
-  });
-
-  useEffect(() => {
-    // Load hero and settings data
-    const loadData = async () => {
-      const [hero, settings] = await Promise.all([
-        loadSingleData<HeroData>('../data/hero.json'),
-        loadSingleData<SettingsData>('../data/settings.json')
-      ]);
-      
-      setHeroData(hero);
-      setSettingsData(settings);
+interface HeroData {
+  title: string;
+  subtitle: string;
+  description: string;
+  cta: {
+    text: string;
+    link: string;
+  };
+  stats: {
+    experience: {
+      value: string;
+      label: string;
     };
-
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (!heroData) return;
-
-    const animateCounters = () => {
-      const targets = { 
-        experience: heroData.experience_years, 
-        projects: heroData.projects_count, 
-        partners: heroData.partners_count, 
-        satisfaction: heroData.satisfaction_rate 
-      };
-      const duration = 2000;
-      const steps = 60;
-      const stepDuration = duration / steps;
-
-      Object.keys(targets).forEach((key) => {
-        const target = targets[key as keyof typeof targets];
-        const increment = target / steps;
-        let current = 0;
-        let step = 0;
-
-        const timer = setInterval(() => {
-          step++;
-          current = Math.min(current + increment, target);
-          setCounters(prev => ({ ...prev, [key]: Math.floor(current) }));
-
-          if (step >= steps) {
-            clearInterval(timer);
-            setCounters(prev => ({ ...prev, [key]: target }));
-          }
-        }, stepDuration);
-      });
+    projects: {
+      value: string;
+      label: string;
     };
+    clients: {
+      value: string;
+      label: string;
+    };
+    awards: {
+      value: string;
+      label: string;
+    };
+  };
+  backgroundImage: string;
+}
 
-    const timer = setTimeout(animateCounters, 500);
-    return () => clearTimeout(timer);
-  }, [heroData]);
+const Hero: React.FC = () => {
+  const { data: heroData, loading, error } = useDataLoader<HeroData>('data/hero.json');
 
-  // Default values while loading
-  const title = heroData?.title || "ON AFRICA TP";
-  const subtitle = heroData?.subtitle || "Construire l'Afrique de demain, aujourd'hui";
-  const description = heroData?.description || "Spécialiste en BTP, logistique et travaux publics basé à Nouakchott, Mauritanie";
-  const phone = settingsData?.phone || "+222 28880729";
-  const whatsapp = settingsData?.whatsapp || "+34 666 39 63 36";
+  if (loading) {
+    return (
+      <section className="relative min-h-screen bg-gradient-to-br from-blue-900 to-gray-900">
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="animate-pulse text-center">
+            <div className="h-12 bg-gray-700 rounded mb-4 w-96"></div>
+            <div className="h-6 bg-gray-700 rounded mb-2 w-64"></div>
+            <div className="h-6 bg-gray-700 rounded mb-2 w-80"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="relative min-h-screen bg-gradient-to-br from-blue-900 to-gray-900">
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center text-white">
+            <p className="text-red-400">Erreur de chargement: {error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!heroData) {
+    return null;
+  }
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-[#08295f] via-blue-800 to-[#08295f] text-white relative overflow-hidden">
-      {/* Background watermark logo */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-        <img 
-          src={settingsData?.logo || "https://i.postimg.cc/x8zq9Qvf/2025-06-29-T075316-796.png"} 
-          alt="ON AFRICA TP Watermark"
-          className="w-96 h-96 lg:w-[600px] lg:h-[600px] object-contain animate-pulse"
-        />
-      </div>
+    <section 
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${heroData.backgroundImage})` }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 to-gray-900/80"></div>
+      
+      <div className="relative z-10 flex items-center min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Content */}
+            <div className="text-white">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                {heroData.title}
+              </h1>
+              <p className="text-xl md:text-2xl mb-6 text-blue-200">
+                {heroData.subtitle}
+              </p>
+              <p className="text-lg mb-8 text-gray-300 leading-relaxed">
+                {heroData.description}
+              </p>
+              
+              <a
+                href={heroData.cta.link}
+                className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                {heroData.cta.text}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+            </div>
 
-      {/* Animated background elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-[#37bdf8]/20 rounded-full blur-xl animate-float"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-400/20 rounded-full blur-xl animate-float-delayed"></div>
-      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-cyan-400/20 rounded-full blur-xl animate-pulse"></div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="text-center mb-16 animate-fadeInUp">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 transform hover:scale-105 transition-transform duration-500">
-            {title.includes('ON AFRICA TP') ? (
-              <>
-                ON <span className="text-[#37bdf8] animate-pulse">AFRICA TP</span>
-              </>
-            ) : (
-              <span className="text-[#37bdf8] animate-pulse">{title}</span>
-            )}
-          </h1>
-          <p className="text-2xl lg:text-3xl text-blue-200 max-w-4xl mx-auto leading-relaxed transform hover:scale-105 transition-transform duration-300 mb-12">
-            {subtitle}
-          </p>
-          <p className="text-lg lg:text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed transform hover:scale-105 transition-transform duration-300">
-            {description}
-          </p>
-        </div>
-
-        <div className="text-center mb-16 animate-fadeInUp delay-500">
-          <p className="text-lg text-blue-200 max-w-3xl mx-auto mb-8 transform hover:scale-105 transition-transform duration-300">
-            Notre équipe d'experts est prête à vous accompagner dans la réalisation de vos projets les plus ambitieux.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href={`tel:${phone.replace(/\s/g, '')}`}
-              className="bg-[#37bdf8] hover:bg-blue-500 text-white px-8 py-4 rounded-full font-semibold flex items-center space-x-2 transition-all duration-300 shadow-lg transform hover:scale-110 hover:shadow-xl"
-            >
-              <Phone className="h-5 w-5 animate-pulse" />
-              <span>Appeler maintenant</span>
-            </a>
-            
-            <a
-              href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold flex items-center space-x-2 transition-all duration-300 shadow-lg transform hover:scale-110 hover:shadow-xl"
-            >
-              <MessageCircle className="h-5 w-5 animate-bounce" />
-              <span>WhatsApp</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Animated Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeInUp delay-700">
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-1 group">
-            <Building className="h-12 w-12 text-[#37bdf8] mx-auto mb-4 group-hover:animate-bounce" />
-            <h3 className="text-2xl font-bold text-white mb-2">{counters.experience}+</h3>
-            <p className="text-white/80">Années d'expérience</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-1 group">
-            <Truck className="h-12 w-12 text-blue-400 mx-auto mb-4 group-hover:animate-bounce" />
-            <h3 className="text-2xl font-bold text-white mb-2">{counters.projects}+</h3>
-            <p className="text-white/80">Projets réalisés</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-1 group">
-            <Droplets className="h-12 w-12 text-[#37bdf8] mx-auto mb-4 group-hover:animate-bounce" />
-            <h3 className="text-2xl font-bold text-white mb-2">{counters.partners}+</h3>
-            <p className="text-white/80">Partenaires</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-1 group">
-            <Building className="h-12 w-12 text-blue-400 mx-auto mb-4 group-hover:animate-bounce" />
-            <h3 className="text-2xl font-bold text-white mb-2">{counters.satisfaction}%</h3>
-            <p className="text-white/80">Satisfaction client</p>
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+                <Calendar className="h-8 w-8 text-blue-400 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-white mb-2">{heroData.stats.experience.value}</div>
+                <div className="text-blue-200">{heroData.stats.experience.label}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+                <Building className="h-8 w-8 text-green-400 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-white mb-2">{heroData.stats.projects.value}</div>
+                <div className="text-blue-200">{heroData.stats.projects.label}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+                <Users className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-white mb-2">{heroData.stats.clients.value}</div>
+                <div className="text-blue-200">{heroData.stats.clients.label}</div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+                <Award className="h-8 w-8 text-red-400 mx-auto mb-3" />
+                <div className="text-3xl font-bold text-white mb-2">{heroData.stats.awards.value}</div>
+                <div className="text-blue-200">{heroData.stats.awards.label}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

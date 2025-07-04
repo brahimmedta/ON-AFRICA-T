@@ -1,164 +1,138 @@
-import React, { useEffect, useState } from 'react';
-import { Building, Hammer, Sprout, Droplets, Truck, Wrench, Plus } from 'lucide-react';
-import { loadCollectionData, type ServiceData } from '../utils/dataLoader';
+import React from 'react';
+import { Building, Truck, Wrench, Droplets, Package, HardHat } from 'lucide-react';
+import { useMultipleDataLoader } from '../utils/dataLoader';
 
-const Services = () => {
-  const [services, setServices] = useState<ServiceData[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  features: string[];
+  image: string;
+  icon: string;
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await loadCollectionData<ServiceData>('services');
-        setServices(data);
-      } catch (error) {
-        console.error('Error loading services:', error);
-        // Fallback to default services if loading fails
-        setServices(defaultServices);
-      } finally {
-        setLoading(false);
-      }
-    };
+const iconMap = {
+  building: Building,
+  truck: Truck,
+  wrench: Wrench,
+  droplets: Droplets,
+  package: Package,
+  hardhat: HardHat,
+};
 
-    loadData();
-  }, []);
-
-  // Icon mapping
-  const getIcon = (iconName: string) => {
-    const icons = {
-      Building,
-      Hammer,
-      Sprout,
-      Droplets,
-      Truck,
-      Wrench,
-      Plus
-    };
-    return icons[iconName as keyof typeof icons] || Building;
-  };
-
-  // Default services as fallback
-  const defaultServices: ServiceData[] = [
-    {
-      icon: 'Building',
-      title: 'Construction de bâtiments',
-      description: 'Réalisation de bâtiments publics, privés et industriels avec des standards de qualité élevés et des finitions soignées.',
-      image: 'https://i.postimg.cc/HLwm2xp1/9d4f801b.jpg'
-    },
-    {
-      icon: 'Hammer',
-      title: 'Travaux de terrassement et de voirie',
-      description: 'Terrassement, nivellement et aménagement de voiries pour tous types de projets d\'infrastructure.',
-      image: 'https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg'
-    },
-    {
-      icon: 'Sprout',
-      title: 'Aménagements agricoles',
-      description: 'Création de pistes rurales et aménagement de périmètres irrigués pour soutenir le développement agricole.',
-      image: 'https://i.postimg.cc/QCPvsGXq/c981b834.jpg'
-    },
-    {
-      icon: 'Droplets',
-      title: 'Adduction d\'eau potable',
-      description: 'Réalisation de forages et installation de réseaux hydrauliques pour l\'approvisionnement en eau potable.',
-      image: 'https://i.postimg.cc/Rh3bgscJ/05cc3b44.jpg'
-    },
-    {
-      icon: 'Truck',
-      title: 'Logistique et transport de marchandises',
-      description: 'Services de transport et de logistique pour l\'acheminement sécurisé de vos marchandises.',
-      image: 'https://i.postimg.cc/0y1HCCrr/6f1f99f.jpg'
-    },
-    {
-      icon: 'Wrench',
-      title: 'Location de camions et d\'engins lourds',
-      description: 'Mise à disposition d\'équipements lourds et spécialisés avec opérateurs qualifiés.',
-      image: 'https://i.postimg.cc/Y25wJYhB/62fc8b03.jpg'
-    }
+const Services: React.FC = () => {
+  const serviceFiles = [
+    'data/services/construction.json',
+    'data/services/terrassement.json',
+    'data/services/amenagement-agricole.json',
+    'data/services/adduction-eau.json',
+    'data/services/logistique.json',
+    'data/services/location-engins.json'
   ];
 
-  const servicesToRender = services.length > 0 ? services : defaultServices;
+  const { data: services, loading, error } = useMultipleDataLoader<Service>(serviceFiles);
 
   if (loading) {
     return (
-      <section className="min-h-screen bg-gray-50 py-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des services...</p>
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="h-8 bg-gray-300 rounded mb-4 w-64 mx-auto animate-pulse"></div>
+            <div className="h-4 bg-gray-300 rounded w-96 mx-auto animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="h-48 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     );
   }
 
-  return (
-    <section className="min-h-screen bg-gray-50 py-20 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute top-10 right-10 w-32 h-32 bg-[#37bdf8]/10 rounded-full blur-xl animate-float"></div>
-      <div className="absolute bottom-20 left-10 w-40 h-40 bg-[#08295f]/10 rounded-full blur-xl animate-float-delayed"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Section Title - Fixed Layout */}
-        <div className="text-center mb-20 animate-fadeInUp">
-          <div className="inline-block bg-gradient-to-r from-[#08295f] to-[#37bdf8] rounded-2xl px-8 py-4 mb-8 transform hover:scale-105 transition-transform duration-500 shadow-lg">
-            <h2 className="text-3xl lg:text-4xl font-bold text-white whitespace-nowrap">
-              Nos Services
-            </h2>
+  if (error) {
+    return (
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-red-600">Erreur de chargement des services: {error}</p>
           </div>
-          <div className="w-24 h-1 bg-gradient-to-r from-[#08295f] to-[#37bdf8] mx-auto rounded-full mb-8"></div>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed transform hover:scale-105 transition-transform duration-300">
-            Découvrez notre gamme complète de services pour répondre à tous vos besoins 
-            en matière de construction, travaux publics et logistique.
+        </div>
+      </section>
+    );
+  }
+
+  if (!services || services.length === 0) {
+    return null;
+  }
+
+  return (
+    <section id="services" className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Nos Services
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Des solutions complètes pour tous vos projets de construction et travaux publics
           </p>
+          <div className="w-24 h-1 bg-blue-600 mx-auto mt-6"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {servicesToRender.map((service, index) => {
-            const IconComponent = getIcon(service.icon);
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service) => {
+            const IconComponent = iconMap[service.icon as keyof typeof iconMap] || Building;
+            
             return (
               <div
-                key={index}
-                className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-1 border border-gray-100 animate-fadeInUp"
-                style={{ animationDelay: `${index * 100}ms` }}
+                key={service.id}
+                className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
               >
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative overflow-hidden rounded-t-xl">
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute top-4 left-4 w-12 h-12 bg-gradient-to-r from-[#08295f] to-[#37bdf8] rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                    <IconComponent className="h-6 w-6 text-white group-hover:animate-bounce" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="bg-blue-600 p-3 rounded-lg">
+                      <IconComponent className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </div>
                 
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-[#08295f] mb-3 group-hover:text-[#37bdf8] transition-colors duration-300 transform group-hover:scale-105">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors duration-300">
+                  <p className="text-gray-600 mb-4 leading-relaxed">
                     {service.description}
                   </p>
-                  {service.price_range && (
-                    <p className="text-sm text-[#37bdf8] mt-2 font-medium">
-                      Prix: {service.price_range}
-                    </p>
-                  )}
-                  {service.duration && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Durée: {service.duration}
-                    </p>
-                  )}
+                  
+                  <ul className="space-y-2">
+                    {service.features.slice(0, 3).map((feature, index) => (
+                      <li key={index} className="flex items-center text-sm text-gray-700">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
+                      En savoir plus →
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
-        </div>
-
-        <div className="text-center animate-fadeInUp delay-700">
-          <button className="bg-gradient-to-r from-[#08295f] to-[#37bdf8] text-white px-8 py-4 rounded-full font-semibold hover:from-[#37bdf8] hover:to-[#08295f] transform hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl">
-            Nous contacter pour un devis
-          </button>
         </div>
       </div>
     </section>

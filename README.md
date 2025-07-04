@@ -29,10 +29,16 @@ ON-AFRICA-TP11/
 │   ├── App.tsx                ✅ Main component
 │   ├── index.css              ✅ Global styles
 │   ├── components/            ✅ React components
-│   ├── data/                  ✅ JSON data files
 │   └── utils/                 ✅ Utility functions
 └── public/                     ✅ Static assets
     ├── _redirects             ✅ Netlify redirects
+    ├── data/                  ✅ JSON data files
+    │   ├── hero.json          ✅ Hero section data
+    │   ├── director.json      ✅ Director message data
+    │   ├── settings.json      ✅ Company settings
+    │   ├── services/          ✅ Service data files
+    │   ├── partners/          ✅ Partner data files
+    │   └── projects/          ✅ Project data files
     └── admin/                 ✅ Netlify CMS
         ├── index.html         ✅ CMS interface
         ├── config.yml         ✅ CMS configuration
@@ -85,6 +91,24 @@ npm run preview
 1. Push changes to GitHub
 2. Netlify automatically builds and deploys
 3. Changes appear live within minutes
+
+## 📊 Data Architecture
+
+### JSON Data Files Location
+All data files are located in `public/data/` to ensure proper serving as static assets:
+
+- **Company Data:** `public/data/settings.json`
+- **Hero Section:** `public/data/hero.json`
+- **Director Message:** `public/data/director.json`
+- **Services:** `public/data/services/*.json`
+- **Partners:** `public/data/partners/*.json`
+- **Projects:** `public/data/projects/*.json`
+
+### Data Loading System
+- **`useDataLoader<T>`**: React hook for loading single JSON files
+- **`useMultipleDataLoader<T>`**: React hook for loading multiple JSON files
+- **Error Handling**: Comprehensive error handling with loading states
+- **Type Safety**: Full TypeScript support for all data structures
 
 ## 🔐 Content Management
 

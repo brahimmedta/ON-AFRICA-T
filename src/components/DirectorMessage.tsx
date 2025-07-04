@@ -1,103 +1,120 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Quote } from 'lucide-react';
-import { loadSingleData, type DirectorData } from '../utils/dataLoader';
+import { useDataLoader } from '../utils/dataLoader';
 
-const DirectorMessage = () => {
-  const [directorData, setDirectorData] = useState<DirectorData | null>(null);
+interface DirectorData {
+  name: string;
+  title: string;
+  message: string;
+  photo: string;
+  signature: string;
+  experience: string;
+  specialties: string[];
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      const data = await loadSingleData<DirectorData>('../data/director.json');
-      setDirectorData(data);
-    };
+const DirectorMessage: React.FC = () => {
+  const { data: directorData, loading, error } = useDataLoader<DirectorData>('data/director.json');
 
-    loadData();
-  }, []);
+  if (loading) {
+    return (
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded mb-4 w-64"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <div className="h-4 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded"></div>
+              </div>
+              <div className="h-64 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
-  // Default values while loading
-  const photo1 = directorData?.photo1 || "https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg";
-  const photo2 = directorData?.photo2 || "https://i.postimg.cc/2SvNk6LL/d3bf859c.jpg";
-  const message1 = directorData?.message1 || "Depuis la création d'ON AFRICA TP en 2009, notre vision a toujours été claire : contribuer au développement durable de l'Afrique en offrant des solutions innovantes et adaptées aux réalités locales.";
-  const message2 = directorData?.message2 || "Notre engagement envers l'excellence, l'innovation et le respect de l'environnement guide chacune de nos actions. Nous croyons fermement que l'Afrique mérite des infrastructures de qualité mondiale.";
-  const message3 = directorData?.message3 || "Chaque projet que nous réalisons est une opportunité de démontrer notre expertise et notre détermination à construire un avenir meilleur pour nos communautés et notre continent.";
-  const position = directorData?.position || "Directeur Général";
+  if (error) {
+    return (
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-red-600">Erreur de chargement: {error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!directorData) {
+    return null;
+  }
 
   return (
-    <section className="min-h-screen bg-white py-20 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-[#37bdf8]/10 rounded-full blur-xl animate-float"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-[#08295f]/10 rounded-full blur-xl animate-float-delayed"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Section Title - Fixed Layout */}
-        <div className="text-center mb-20 animate-fadeInUp">
-          <div className="inline-block bg-gradient-to-r from-[#08295f] to-[#37bdf8] rounded-2xl px-8 py-4 mb-8 transform hover:scale-105 transition-transform duration-500 shadow-lg">
-            <h2 className="text-3xl lg:text-4xl font-bold text-white whitespace-nowrap">
-              Le Mot du Directeur
-            </h2>
-          </div>
-          <div className="w-24 h-1 bg-gradient-to-r from-[#08295f] to-[#37bdf8] mx-auto rounded-full"></div>
+    <section className="py-20 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Message du Directeur
+          </h2>
+          <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Director Photos */}
-          <div className="flex justify-center lg:justify-end space-x-6 animate-fadeInUp">
-            <div className="relative group">
-              <div className="w-64 h-64 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-[#08295f] to-[#37bdf8] p-2 transform group-hover:scale-110 transition-transform duration-500">
-                <img
-                  src={photo1}
-                  alt="Directeur ON AFRICA TP"
-                  className="w-full h-full rounded-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-20 h-20 bg-[#37bdf8]/20 rounded-full blur-xl animate-pulse"></div>
-              <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-[#08295f]/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Message Content */}
+          <div className="order-2 lg:order-1">
+            <div className="relative">
+              <Quote className="absolute -top-4 -left-4 h-12 w-12 text-blue-600/20" />
+              <blockquote className="text-lg text-gray-700 leading-relaxed mb-8 pl-8">
+                {directorData.message}
+              </blockquote>
             </div>
-
-            <div className="relative group">
-              <div className="w-64 h-64 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-[#37bdf8] to-[#08295f] p-2 transform group-hover:scale-110 transition-transform duration-500">
-                <img
-                  src={photo2}
-                  alt="Directeur ON AFRICA TP"
-                  className="w-full h-full rounded-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                />
+            
+            <div className="border-l-4 border-blue-600 pl-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">
+                {directorData.name}
+              </h3>
+              <p className="text-blue-600 font-semibold mb-2">
+                {directorData.title}
+              </p>
+              <p className="text-gray-600 mb-4">
+                {directorData.experience}
+              </p>
+              
+              <div className="mb-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Spécialités:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {directorData.specialties.map((specialty, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
+                </div>
               </div>
               
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -left-4 w-20 h-20 bg-[#08295f]/20 rounded-full blur-xl animate-pulse"></div>
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[#37bdf8]/20 rounded-full blur-xl animate-pulse"></div>
+              {directorData.signature && (
+                <img
+                  src={directorData.signature}
+                  alt="Signature"
+                  className="h-16 object-contain"
+                />
+              )}
             </div>
           </div>
 
-          {/* Message */}
-          <div className="space-y-8 animate-fadeInUp delay-300">
+          {/* Director Photo */}
+          <div className="order-1 lg:order-2">
             <div className="relative">
-              <Quote className="absolute -top-4 -left-4 h-16 w-16 text-[#37bdf8]/40 animate-pulse" />
-              
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 space-y-6 transform hover:scale-105 transition-transform duration-300 hover:shadow-xl">
-                <p className="text-lg text-gray-700 leading-relaxed transform hover:scale-105 transition-transform duration-300">
-                  "{message1}"
-                </p>
-                
-                <p className="text-lg text-gray-700 leading-relaxed transform hover:scale-105 transition-transform duration-300">
-                  "{message2}"
-                </p>
-                
-                <p className="text-lg text-gray-700 leading-relaxed transform hover:scale-105 transition-transform duration-300">
-                  "{message3}"
-                </p>
-                
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xl font-bold text-[#08295f] transform hover:scale-105 transition-transform duration-300">
-                    {position}
-                  </p>
-                  <p className="text-[#37bdf8] font-medium transform hover:scale-105 transition-transform duration-300">
-                    ON AFRICA TP
-                  </p>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl transform rotate-3"></div>
+              <img
+                src={directorData.photo}
+                alt={directorData.name}
+                className="relative w-full h-96 object-cover rounded-2xl shadow-2xl"
+              />
             </div>
           </div>
         </div>

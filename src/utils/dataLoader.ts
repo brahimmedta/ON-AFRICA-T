@@ -1,239 +1,129 @@
-// Data loading utility for CMS collections with proper JSON handling
-export interface ServiceData {
-  title: string;
-  description: string;
-  image: string;
-  icon: string;
-  price_range?: string;
-  duration?: string;
+import { useState, useEffect } from 'react';
+
+export interface DataLoaderResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
 }
 
-export interface ProjectData {
-  title: string;
-  description: string;
-  image: string;
-  year: number;
-  location?: string;
-  client?: string;
-  category: string;
-}
+export function useDataLoader<T>(filePath: string): DataLoaderResult<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export interface PartnerData {
-  name: string;
-  description: string;
-  logo: string;
-  website?: string;
-  email?: string;
-  partnership_type: string;
-}
+  useEffect(() => {
+    let isMounted = true;
 
-export interface HeroData {
-  title: string;
-  subtitle: string;
-  description: string;
-  experience_years: number;
-  projects_count: number;
-  partners_count: number;
-  satisfaction_rate: number;
-}
-
-export interface DirectorData {
-  photo1: string;
-  photo2: string;
-  message1: string;
-  message2: string;
-  message3: string;
-  position: string;
-}
-
-export interface SettingsData {
-  company_name: string;
-  phone: string;
-  fax: string;
-  whatsapp: string;
-  email: string;
-  bp: string;
-  address: string;
-  logo: string;
-}
-
-// Cache for loaded data
-const dataCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Load collection data from multiple files
-export async function loadCollectionData<T>(pattern: string): Promise<T[]> {
-  const cacheKey = `collection_${pattern}`;
-  const now = Date.now();
-  
-  // Check cache first
-  const cached = dataCache.get(cacheKey);
-  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    console.log(`📦 Using cached data for ${pattern}`);
-    return cached.data;
-  }
-  
-  try {
-    console.log(`🔄 Loading fresh data for ${pattern}...`);
-    
-    // Define known data files for each collection
-    const collectionFiles: Record<string, string[]> = {
-      services: [
-        '/data/services/construction.json',
-        '/data/services/terrassement.json',
-        '/data/services/amenagement-agricole.json',
-        '/data/services/adduction-eau.json',
-        '/data/services/logistique.json',
-        '/data/services/location-engins.json'
-      ],
-      projects: [
-        '/data/projects/2024-batiment-industriel.json',
-        '/data/projects/2024-terrassement-infrastructure.json',
-        '/data/projects/2023-amenagement-agricole.json',
-        '/data/projects/2023-adduction-eau.json'
-      ],
-      partners: [
-        '/data/partners/partenaires-internationaux.json',
-        '/data/partners/partenaires-locaux.json',
-        '/data/partners/institutions-publiques.json',
-        '/data/partners/partenaires-financiers.json'
-      ]
-    };
-    
-    const files = collectionFiles[pattern] || [];
-    
-    const dataPromises = files.map(async (filePath) => {
+    const loadData = async () => {
       try {
-        // Add cache busting parameter
-        const cacheBuster = `?v=${now}`;
-        const response = await fetch(filePath + cacheBuster);
+        setLoading(true);
+        setError(null);
+        
+        // Convert relative path to absolute path from public directory
+        const publicPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+        
+        const response = await fetch(publicPath);
         
         if (!response.ok) {
-          console.warn(`Failed to fetch ${filePath}: ${response.status}`);
-          return null;
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.warn(`Error loading ${filePath}:`, error);
-        return null;
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Expected JSON but received:', text.substring(0, 100));
+          throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+        }
+        
+        const jsonData = await response.json();
+        
+        if (isMounted) {
+          setData(jsonData);
+        }
+      } catch (err) {
+        console.error(`Error loading data from ${filePath}:`, err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    });
-    
-    const results = await Promise.all(dataPromises);
-    const data = results.filter(Boolean); // Remove null values
-    
-    // Cache the result
-    dataCache.set(cacheKey, { data, timestamp: now });
-    
-    console.log(`✅ Loaded ${data.length} items for ${pattern}`);
-    return data;
-  } catch (error) {
-    console.error(`Error loading collection data for ${pattern}:`, error);
-    
-    // Return cached data if available, even if expired
-    if (cached) {
-      console.log(`⚠️ Using expired cache for ${pattern} due to error`);
-      return cached.data;
-    }
-    
-    return [];
-  }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [filePath]);
+
+  return { data, loading, error };
 }
 
-// Load single file data with proper JSON handling
-export async function loadSingleData<T>(filePath: string): Promise<T | null> {
-  const cacheKey = `single_${filePath}`;
-  const now = Date.now();
-  
-  // Check cache first
-  const cached = dataCache.get(cacheKey);
-  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    console.log(`📦 Using cached data for ${filePath}`);
-    return cached.data;
-  }
-  
+export async function loadSingleData<T>(filePath: string): Promise<T> {
   try {
-    console.log(`🔄 Loading fresh data for ${filePath}...`);
+    // Convert relative path to absolute path from public directory
+    const publicPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
     
-    // Convert relative path to absolute path
-    const absolutePath = filePath.replace('../', '/');
-    
-    // Add cache busting parameter
-    const cacheBuster = `?v=${now}`;
-    
-    const response = await fetch(absolutePath + cacheBuster);
+    const response = await fetch(publicPath);
     
     if (!response.ok) {
-      console.warn(`Failed to fetch ${absolutePath}: ${response.status}`);
-      
-      // Return cached data if available, even if expired
-      if (cached) {
-        console.log(`⚠️ Using expired cache for ${filePath} due to fetch error`);
-        return cached.data;
-      }
-      
-      return null;
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Expected JSON but received:', text.substring(0, 100));
+      throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+    }
     
-    // Cache the result
-    dataCache.set(cacheKey, { data, timestamp: now });
-    
-    console.log(`✅ Loaded fresh data for ${filePath}`);
-    return data;
+    return await response.json();
   } catch (error) {
     console.error(`Error loading data from ${filePath}:`, error);
-    
-    // Return cached data if available, even if expired
-    if (cached) {
-      console.log(`⚠️ Using expired cache for ${filePath} due to error`);
-      return cached.data;
-    }
-    
-    return null;
+    throw error;
   }
 }
 
-// Clear cache function for manual refresh
-export function clearDataCache() {
-  dataCache.clear();
-  console.log('🗑️ Data cache cleared');
-}
+export function useMultipleDataLoader<T>(filePaths: string[]): DataLoaderResult<T[]> {
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-// Force refresh data
-export async function refreshData<T>(pattern: string): Promise<T[]> {
-  const cacheKey = `collection_${pattern}`;
-  dataCache.delete(cacheKey);
-  return loadCollectionData<T>(pattern);
-}
+  useEffect(() => {
+    let isMounted = true;
 
-// Force refresh single data
-export async function refreshSingleData<T>(filePath: string): Promise<T | null> {
-  const cacheKey = `single_${filePath}`;
-  dataCache.delete(cacheKey);
-  return loadSingleData<T>(filePath);
-}
+    const loadAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const promises = filePaths.map(path => loadSingleData<T>(path));
+        const results = await Promise.all(promises);
+        
+        if (isMounted) {
+          setData(results);
+        }
+      } catch (err) {
+        console.error('Error loading multiple data files:', err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-// Icon mapping for services
-export const iconMap = {
-  Building: 'Building',
-  Hammer: 'Hammer',
-  Sprout: 'Sprout',
-  Droplets: 'Droplets',
-  Truck: 'Truck',
-  Wrench: 'Wrench',
-  Plus: 'Plus'
-} as const;
+    loadAllData();
 
-export type IconName = keyof typeof iconMap;
+    return () => {
+      isMounted = false;
+    };
+  }, [filePaths.join(',')]);
 
-// Auto-refresh data every 5 minutes
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    console.log('🔄 Auto-refreshing data cache...');
-    clearDataCache();
-  }, 5 * 60 * 1000);
+  return { data, loading, error };
 }
