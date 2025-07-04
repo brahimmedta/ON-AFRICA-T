@@ -8,14 +8,22 @@ import Realizations from './components/Realizations';
 import Partners from './components/Partners';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import AdminLogin from './components/AdminLogin';
 
 function App() {
   const [activeSection, setActiveSection] = useState('accueil');
 
-  // Check if we're on the admin login page
-  if (window.location.pathname === '/admin-login') {
-    return <AdminLogin />;
+  // Check if we're on any admin route - redirect to Netlify CMS
+  if (window.location.pathname === '/admin-login' || window.location.pathname.startsWith('/admin-login/')) {
+    // Redirect to the actual Netlify CMS admin interface
+    window.location.href = '/admin/';
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#08295f] via-blue-800 to-[#08295f] flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#37bdf8] mx-auto mb-4"></div>
+          <p>Redirection vers le panneau d'administration...</p>
+        </div>
+      </div>
+    );
   }
 
   const renderActiveSection = () => {
